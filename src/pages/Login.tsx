@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { GraduationCap, Users, TrendingUp, Shield, Brain, Code } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -14,19 +13,9 @@ import { motion } from "framer-motion";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("student");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  const roles = [
-    { value: "student", label: "Student", icon: GraduationCap },
-    { value: "instructor", label: "Instructor", icon: Users },
-    { value: "advisor", label: "Advisor", icon: TrendingUp },
-    { value: "admin", label: "Admin", icon: Shield },
-    { value: "data_scientist", label: "Data Scientist", icon: Brain },
-    { value: "dev_team", label: "Dev Team", icon: Code },
-  ];
 
   useEffect(() => {
     const checkUser = async () => {
@@ -42,7 +31,7 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -53,14 +42,43 @@ const Login = () => {
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Success",
-        description: "Logged in successfully",
-      });
-      navigate("/student/dashboard");
+      setIsLoading(false);
+      return;
     }
-    
+
+    // Fetch user's role from user_roles table
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', data.user.id)
+      .maybeSingle();
+
+    if (roleError || !roleData) {
+      toast({
+        title: "Error",
+        description: "Could not fetch user role. Please contact support.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    toast({
+      title: "Success",
+      description: "Logged in successfully!",
+    });
+
+    // Route based on user's actual role
+    const roleRoutes: Record<string, string> = {
+      student: "/student/dashboard",
+      instructor: "/instructor/dashboard",
+      admin: "/admin/dashboard",
+      advisor: "/advisor/dashboard",
+      data_scientist: "/data-scientist/dashboard",
+      dev_team: "/dev/dashboard",
+    };
+
+    navigate(roleRoutes[roleData.role] || "/student/dashboard");
     setIsLoading(false);
   };
 
@@ -121,36 +139,7 @@ const Login = () => {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Label>Select Your Role</Label>
-                <RadioGroup value={role} onValueChange={setRole}>
-                  <div className="grid grid-cols-2 gap-3">
-                    {roles.map((roleOption) => {
-                      const Icon = roleOption.icon;
-                      return (
-                        <label
-                          key={roleOption.value}
-                          className={`relative flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all ${
-                            role === roleOption.value
-                              ? "border-primary bg-primary/10"
-                              : "border-border bg-background/50 hover:bg-accent"
-                          }`}
-                        >
-                          <RadioGroupItem
-                            value={roleOption.value}
-                            id={roleOption.value}
-                            className="sr-only"
-                          />
-                          <Icon className="h-5 w-5 text-primary" />
-                          <span className="text-sm font-medium">{roleOption.label}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <Button 
+              <Button
                 type="submit" 
                 className="w-full bg-gradient-primary"
                 disabled={isLoading}
