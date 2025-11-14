@@ -33,7 +33,23 @@ const Register = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/student/dashboard");
+        // Fetch user's role to redirect to appropriate dashboard
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        const roleRoutes: Record<string, string> = {
+          student: "/student/dashboard",
+          instructor: "/instructor/dashboard",
+          admin: "/admin/dashboard",
+          advisor: "/advisor/dashboard",
+          data_scientist: "/data-scientist/dashboard",
+          dev_team: "/dev/dashboard",
+        };
+
+        navigate(roleRoutes[roleData?.role] || "/student/dashboard");
       }
     };
     checkUser();
@@ -63,14 +79,56 @@ const Register = () => {
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Success",
-        description: "Account created successfully! You can now sign in.",
-      });
-      navigate("/student/dashboard");
+      setIsLoading(false);
+      return;
     }
+
+    // Fetch the session to get user ID
+    const { data: { session } } = await supabase.auth.getSession();
     
+    if (!session) {
+      toast({
+        title: "Error",
+        description: "Session not found after registration",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Fetch user's role from user_roles table
+    const { data: roleData, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if (roleError || !roleData) {
+      toast({
+        title: "Error",
+        description: "Could not fetch user role. Please try logging in.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    toast({
+      title: "Success",
+      description: "Account created successfully!",
+    });
+
+    // Route based on user's actual role
+    const roleRoutes: Record<string, string> = {
+      student: "/student/dashboard",
+      instructor: "/instructor/dashboard",
+      admin: "/admin/dashboard",
+      advisor: "/advisor/dashboard",
+      data_scientist: "/data-scientist/dashboard",
+      dev_team: "/dev/dashboard",
+    };
+
+    navigate(roleRoutes[roleData.role]);
     setIsLoading(false);
   };
 
