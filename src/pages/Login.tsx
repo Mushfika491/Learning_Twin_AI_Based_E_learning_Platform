@@ -28,17 +28,27 @@ const Login = () => {
           .eq('user_id', session.user.id)
           .maybeSingle();
 
-        if (roleData) {
-          const roleRoutes: Record<string, string> = {
-            student: "/student/dashboard",
-            instructor: "/instructor/dashboard",
-            admin: "/admin/dashboard",
-            advisor: "/advisor/dashboard",
-            data_scientist: "/data-scientist/dashboard",
-            dev_team: "/dev/dashboard",
-          };
-
-          navigate(roleRoutes[roleData.role]);
+        if (roleData?.role) {
+          switch(roleData.role) {
+            case "student":
+              navigate("/student/dashboard");
+              break;
+            case "instructor":
+              navigate("/instructor/dashboard");
+              break;
+            case "admin":
+              navigate("/admin/dashboard");
+              break;
+            case "advisor":
+              navigate("/advisor/dashboard");
+              break;
+            case "data_scientist":
+              navigate("/data-scientist/dashboard");
+              break;
+            case "dev_team":
+              navigate("/dev/dashboard");
+              break;
+          }
         }
       }
     };
@@ -86,17 +96,28 @@ const Login = () => {
       description: "Logged in successfully!",
     });
 
-    // Route based on user's actual role
-    const roleRoutes: Record<string, string> = {
-      student: "/student/dashboard",
-      instructor: "/instructor/dashboard",
-      admin: "/admin/dashboard",
-      advisor: "/advisor/dashboard",
-      data_scientist: "/data-scientist/dashboard",
-      dev_team: "/dev/dashboard",
-    };
-
-    navigate(roleRoutes[roleData.role]);
+    // Route based on user's actual role using explicit switch
+    switch(roleData.role) {
+      case "student":
+        navigate("/student/dashboard");
+        break;
+      case "instructor":
+        navigate("/instructor/dashboard");
+        break;
+      case "admin":
+        navigate("/admin/dashboard");
+        break;
+      case "advisor":
+        navigate("/advisor/dashboard");
+        break;
+      case "data_scientist":
+        navigate("/data-scientist/dashboard");
+        break;
+      case "dev_team":
+        navigate("/dev/dashboard");
+        break;
+    }
+    
     setIsLoading(false);
   };
 

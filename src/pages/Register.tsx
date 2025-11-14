@@ -40,16 +40,28 @@ const Register = () => {
           .eq('user_id', session.user.id)
           .maybeSingle();
 
-        const roleRoutes: Record<string, string> = {
-          student: "/student/dashboard",
-          instructor: "/instructor/dashboard",
-          admin: "/admin/dashboard",
-          advisor: "/advisor/dashboard",
-          data_scientist: "/data-scientist/dashboard",
-          dev_team: "/dev/dashboard",
-        };
-
-        navigate(roleRoutes[roleData?.role] || "/student/dashboard");
+        if (roleData?.role) {
+          switch(roleData.role) {
+            case "student":
+              navigate("/student/dashboard");
+              break;
+            case "instructor":
+              navigate("/instructor/dashboard");
+              break;
+            case "admin":
+              navigate("/admin/dashboard");
+              break;
+            case "advisor":
+              navigate("/advisor/dashboard");
+              break;
+            case "data_scientist":
+              navigate("/data-scientist/dashboard");
+              break;
+            case "dev_team":
+              navigate("/dev/dashboard");
+              break;
+          }
+        }
       }
     };
     checkUser();
@@ -83,6 +95,9 @@ const Register = () => {
       return;
     }
 
+    // Wait for the trigger to complete before fetching role
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     // Fetch the session to get user ID
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -96,14 +111,24 @@ const Register = () => {
       return;
     }
 
-    // Fetch user's role from user_roles table
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', session.user.id)
-      .maybeSingle();
+    // Fetch user's role from user_roles table with retry
+    let roleData = null;
+    let attempts = 0;
+    while (!roleData && attempts < 3) {
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      
+      roleData = data;
+      if (!roleData) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        attempts++;
+      }
+    }
 
-    if (roleError || !roleData) {
+    if (!roleData) {
       toast({
         title: "Error",
         description: "Could not fetch user role. Please try logging in.",
@@ -118,17 +143,28 @@ const Register = () => {
       description: "Account created successfully!",
     });
 
-    // Route based on user's actual role
-    const roleRoutes: Record<string, string> = {
-      student: "/student/dashboard",
-      instructor: "/instructor/dashboard",
-      admin: "/admin/dashboard",
-      advisor: "/advisor/dashboard",
-      data_scientist: "/data-scientist/dashboard",
-      dev_team: "/dev/dashboard",
-    };
-
-    navigate(roleRoutes[roleData.role]);
+    // Route based on user's actual role using explicit switch
+    switch(roleData.role) {
+      case "student":
+        navigate("/student/dashboard");
+        break;
+      case "instructor":
+        navigate("/instructor/dashboard");
+        break;
+      case "admin":
+        navigate("/admin/dashboard");
+        break;
+      case "advisor":
+        navigate("/advisor/dashboard");
+        break;
+      case "data_scientist":
+        navigate("/data-scientist/dashboard");
+        break;
+      case "dev_team":
+        navigate("/dev/dashboard");
+        break;
+    }
+    
     setIsLoading(false);
   };
 
