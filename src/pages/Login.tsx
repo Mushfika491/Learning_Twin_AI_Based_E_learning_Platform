@@ -21,7 +21,25 @@ const Login = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/student/dashboard");
+        // Fetch user's role to redirect to appropriate dashboard
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        if (roleData) {
+          const roleRoutes: Record<string, string> = {
+            student: "/student/dashboard",
+            instructor: "/instructor/dashboard",
+            admin: "/admin/dashboard",
+            advisor: "/advisor/dashboard",
+            data_scientist: "/data-scientist/dashboard",
+            dev_team: "/dev/dashboard",
+          };
+
+          navigate(roleRoutes[roleData.role]);
+        }
       }
     };
     checkUser();
@@ -78,7 +96,7 @@ const Login = () => {
       dev_team: "/dev/dashboard",
     };
 
-    navigate(roleRoutes[roleData.role] || "/student/dashboard");
+    navigate(roleRoutes[roleData.role]);
     setIsLoading(false);
   };
 
