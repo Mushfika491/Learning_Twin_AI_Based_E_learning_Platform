@@ -4,23 +4,36 @@ import { Navbar } from "@/components/Navbar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { BookOpen, TrendingUp, Clock, Award, Brain, ChevronRight } from "lucide-react";
+import { BookOpen, TrendingUp, Clock, Award, Brain, ChevronRight, Search } from "lucide-react";
 import { motion } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 interface Course {
   id: string;
   title: string;
   category: string;
+  description: string;
+  progress?: number;
+}
+
+interface Enrollment {
+  id: string;
+  course_id: string;
   progress: number;
 }
 
 const StudentDashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
+  const [availableCourses, setAvailableCourses] = useState<Course[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -33,7 +46,6 @@ const StudentDashboard = () => {
 
       setUser(session.user);
 
-      // Fetch profile
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
@@ -42,29 +54,7 @@ const StudentDashboard = () => {
 
       setProfile(profileData);
 
-      // Fetch enrolled courses with progress
-      const { data: enrollmentsData } = await supabase
-        .from("enrollments")
-        .select(`
-          progress,
-          courses (
-            id,
-            title,
-            category
-          )
-        `)
-        .eq("user_id", session.user.id);
-
-      if (enrollmentsData) {
-        const coursesWithProgress = enrollmentsData.map((enrollment: any) => ({
-          id: enrollment.courses.id,
-          title: enrollment.courses.title,
-          category: enrollment.courses.category,
-          progress: enrollment.progress,
-        }));
-        setCourses(coursesWithProgress);
-      }
-
+      await fetchCourses(session.user.id);
       setIsLoading(false);
     };
 
@@ -79,17 +69,82 @@ const StudentDashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  const fetchCourses = async (userId: string) => {
+    // Fetch enrolled courses
+    const { data: enrollmentsData } = await supabase
+      .from("enrollments")
+      .select(`
+        id,
+        progress,
+        course_id,
+        courses (
+          id,
+          title,
+          category,
+          description
+        )
+      `)
+      .eq("user_id", userId);
+
+    if (enrollmentsData) {
+      const coursesWithProgress = enrollmentsData.map((enrollment: any) => ({
+        ...enrollment.courses,
+        progress: enrollment.progress,
+        enrollment_id: enrollment.id,
+      }));
+      setEnrolledCourses(coursesWithProgress);
+    }
+
+    // Fetch all available courses
+    const { data: allCourses } = await supabase
+      .from("courses")
+      .select("*");
+
+    if (allCourses) {
+      const enrolledIds = enrollmentsData?.map((e: any) => e.course_id) || [];
+      const available = allCourses.filter(c => !enrolledIds.includes(c.id));
+      setAvailableCourses(available);
+    }
+  };
+
+  const handleEnroll = async (courseId: string) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("enrollments")
+      .insert([{ user_id: user.id, course_id: courseId, progress: 0 }]);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to enroll in course",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Enrolled successfully!",
+      });
+      await fetchCourses(user.id);
+    }
+  };
+
+  const filteredAvailableCourses = availableCourses.filter(course =>
+    course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    course.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const stats = [
     {
       icon: BookOpen,
       label: "Enrolled Courses",
-      value: courses.length,
+      value: enrolledCourses.length,
       color: "text-blue-500",
     },
     {
       icon: TrendingUp,
       label: "Avg Progress",
-      value: `${courses.length > 0 ? Math.round(courses.reduce((acc, c) => acc + c.progress, 0) / courses.length) : 0}%`,
+      value: `${enrolledCourses.length > 0 ? Math.round(enrolledCourses.reduce((acc, c) => acc + (c.progress || 0), 0) / enrolledCourses.length) : 0}%`,
       color: "text-green-500",
     },
     {
@@ -105,6 +160,22 @@ const StudentDashboard = () => {
       color: "text-amber-500",
     },
   ];
+
+  const progressData = [
+    { week: "Week 1", progress: 20 },
+    { week: "Week 2", progress: 35 },
+    { week: "Week 3", progress: 55 },
+    { week: "Week 4", progress: 70 },
+  ];
+
+  const categoryData = [
+    { name: "Programming", value: 40 },
+    { name: "Design", value: 30 },
+    { name: "Data Science", value: 20 },
+    { name: "Business", value: 10 },
+  ];
+
+  const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--secondary))', 'hsl(var(--muted))'];
 
   const recommendations = [
     {
@@ -177,21 +248,70 @@ const StudentDashboard = () => {
             ))}
           </div>
 
+          {/* Analytics Charts */}
+          <div className="grid lg:grid-cols-2 gap-6 mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>My Progress</CardTitle>
+                <CardDescription>Weekly learning progress</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={progressData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="week" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="progress" stroke="hsl(var(--primary))" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Learning Distribution</CardTitle>
+                <CardDescription>Time spent by category</CardDescription>
+              </CardHeader>
+              <CardContent className="flex items-center justify-center">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
           <div className="grid lg:grid-cols-3 gap-6">
             {/* My Courses */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>My Courses</CardTitle>
                   <CardDescription>Continue where you left off</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {courses.length === 0 ? (
+                  {enrolledCourses.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">
-                      No enrolled courses yet. Start learning today!
+                      No enrolled courses yet. Browse available courses below!
                     </p>
                   ) : (
-                    courses.map((course) => (
+                    enrolledCourses.map((course) => (
                       <div
                         key={course.id}
                         className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent/50 transition-colors"
@@ -202,14 +322,59 @@ const StudentDashboard = () => {
                             {course.category}
                           </p>
                           <div className="flex items-center gap-2">
-                            <Progress value={course.progress} className="flex-1" />
+                            <Progress value={course.progress || 0} className="flex-1" />
                             <span className="text-sm font-medium">
-                              {course.progress}%
+                              {course.progress || 0}%
                             </span>
                           </div>
                         </div>
                         <Button variant="ghost" size="icon">
                           <ChevronRight className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Available Courses */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Available Courses</CardTitle>
+                  <CardDescription>Browse and enroll in new courses</CardDescription>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search courses..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {filteredAvailableCourses.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      No courses available
+                    </p>
+                  ) : (
+                    filteredAvailableCourses.map((course) => (
+                      <div
+                        key={course.id}
+                        className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <h3 className="font-semibold mb-1">{course.title}</h3>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {course.category}
+                          </p>
+                          <p className="text-sm">{course.description}</p>
+                        </div>
+                        <Button
+                          className="bg-gradient-primary"
+                          onClick={() => handleEnroll(course.id)}
+                        >
+                          Enroll
                         </Button>
                       </div>
                     ))
