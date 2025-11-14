@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, Users, TrendingUp, Shield, Brain, Code } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 
@@ -14,9 +15,19 @@ const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("student");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const roles = [
+    { value: "student", label: "Student", icon: GraduationCap },
+    { value: "instructor", label: "Instructor", icon: Users },
+    { value: "admin", label: "Admin", icon: Shield },
+    { value: "advisor", label: "Advisor", icon: TrendingUp },
+    { value: "data_scientist", label: "Data Scientist", icon: Brain },
+    { value: "dev_team", label: "Dev Team", icon: Code },
+  ];
 
   useEffect(() => {
     const checkUser = async () => {
@@ -40,7 +51,7 @@ const Register = () => {
       options: {
         data: {
           name,
-          role: 'student',
+          role,
         },
         emailRedirectTo: redirectUrl,
       },
@@ -129,7 +140,36 @@ const Register = () => {
                 />
               </div>
 
-              <Button 
+              <div className="space-y-3">
+                <Label>Select Your Role</Label>
+                <RadioGroup value={role} onValueChange={setRole}>
+                  <div className="grid grid-cols-2 gap-3">
+                    {roles.map((roleOption) => {
+                      const Icon = roleOption.icon;
+                      return (
+                        <label
+                          key={roleOption.value}
+                          className={`relative flex flex-col items-center justify-center gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all ${
+                            role === roleOption.value
+                              ? "border-primary bg-primary/10"
+                              : "border-border bg-background/50 hover:bg-accent"
+                          }`}
+                        >
+                          <RadioGroupItem
+                            value={roleOption.value}
+                            id={roleOption.value}
+                            className="sr-only"
+                          />
+                          <Icon className="h-5 w-5 text-primary" />
+                          <span className="text-sm font-medium">{roleOption.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <Button
                 type="submit" 
                 className="w-full bg-gradient-primary"
                 disabled={isLoading}

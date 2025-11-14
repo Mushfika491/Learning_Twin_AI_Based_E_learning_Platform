@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      content: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          id: string
+          link: string | null
+          metadata: Json | null
+          order_index: number | null
+          title: string
+          type: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          id?: string
+          link?: string | null
+          metadata?: Json | null
+          order_index?: number | null
+          title: string
+          type: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          id?: string
+          link?: string | null
+          metadata?: Json | null
+          order_index?: number | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           category: string
@@ -121,12 +162,43 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role:
