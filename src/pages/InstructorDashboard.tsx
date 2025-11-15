@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
+import { RoleSidebar } from "@/components/RoleSidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,11 +22,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { BookOpen, Plus, Pencil, Trash2, Users, TrendingUp, BarChart3 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
+import { ContentUploadSection } from "@/components/instructor/ContentUploadSection";
+import { StudentAnalytics } from "@/components/instructor/StudentAnalytics";
 
 interface Course {
   id: string;
@@ -247,8 +251,18 @@ const InstructorDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar user={profile} />
-      
-      <div className="container py-8">
+      <div className="flex w-full">
+        <RoleSidebar role="instructor" />
+        <div className="flex-1 p-8">
+          <Tabs defaultValue="courses" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="courses">My Courses</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="content">Content</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="courses">
+              <div className="container py-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -444,6 +458,18 @@ const InstructorDashboard = () => {
             </CardContent>
           </Card>
         </motion.div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="analytics">
+              <StudentAnalytics />
+            </TabsContent>
+            
+            <TabsContent value="content">
+              <ContentUploadSection />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   );
