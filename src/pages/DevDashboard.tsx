@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Code } from "lucide-react";
+import { RoleSidebar } from "@/components/RoleSidebar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SystemHealthDashboard } from "@/components/dev/SystemHealthDashboard";
+import { SystemLogsTable } from "@/components/dev/SystemLogsTable";
 
 const DevDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
@@ -19,7 +20,6 @@ const DevDashboard = () => {
         return;
       }
 
-      // Verify user has dev_team role
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
@@ -31,7 +31,6 @@ const DevDashboard = () => {
         return;
       }
 
-      // Fetch profile data
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
@@ -52,21 +51,27 @@ const DevDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar user={profile ? { name: profile.name, email: profile.email, avatar: profile.avatar } : undefined} />
-      <main className="container mx-auto px-4 py-8">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <Code className="h-8 w-8 text-primary" />
-              <CardTitle className="text-3xl">Developer Dashboard</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Developer dashboard coming soon. Monitor system health and manage deployments.
-            </p>
-          </CardContent>
-        </Card>
-      </main>
+      <div className="flex w-full">
+        <RoleSidebar role="dev_team" />
+        <main className="flex-1 p-8">
+          <h1 className="text-3xl font-bold mb-6">Developer Dashboard</h1>
+          
+          <Tabs defaultValue="health" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="health">System Health</TabsTrigger>
+              <TabsTrigger value="logs">Logs</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="health">
+              <SystemHealthDashboard />
+            </TabsContent>
+
+            <TabsContent value="logs">
+              <SystemLogsTable />
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
     </div>
   );
 };
