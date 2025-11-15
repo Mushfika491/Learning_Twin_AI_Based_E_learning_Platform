@@ -11,44 +11,21 @@ interface SidebarItem {
 const roleMenuItems: Record<string, SidebarItem[]> = {
   student: [
     { title: "Dashboard", href: "/student/dashboard", icon: Home },
-    { title: "My Courses", href: "/student/courses", icon: BookOpen },
-    { title: "Progress", href: "/student/progress", icon: TrendingUp },
   ],
   instructor: [
     { title: "Dashboard", href: "/instructor/dashboard", icon: Home },
-    { title: "My Courses", href: "/instructor/courses", icon: BookOpen },
-    { title: "Students", href: "/instructor/students", icon: Users },
-    { title: "Analytics", href: "/instructor/analytics", icon: BarChart3 },
-    { title: "Content", href: "/instructor/content", icon: Upload },
   ],
   admin: [
     { title: "Dashboard", href: "/admin/dashboard", icon: Home },
-    { title: "Users", href: "/admin/users", icon: Users },
-    { title: "Courses", href: "/admin/courses", icon: BookOpen },
-    { title: "Reports", href: "/admin/reports", icon: FileText },
-    { title: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-    { title: "Settings", href: "/admin/settings", icon: Settings },
   ],
   advisor: [
     { title: "Dashboard", href: "/advisor/dashboard", icon: Home },
-    { title: "Students", href: "/advisor/students", icon: Users },
-    { title: "At-Risk", href: "/advisor/at-risk", icon: AlertTriangle },
-    { title: "Interventions", href: "/advisor/interventions", icon: FileText },
-    { title: "Analytics", href: "/advisor/analytics", icon: BarChart3 },
   ],
   data_scientist: [
     { title: "Dashboard", href: "/data-scientist/dashboard", icon: Home },
-    { title: "Models", href: "/data-scientist/models", icon: Brain },
-    { title: "Datasets", href: "/data-scientist/datasets", icon: Database },
-    { title: "Experiments", href: "/data-scientist/experiments", icon: Activity },
-    { title: "Analytics", href: "/data-scientist/analytics", icon: BarChart3 },
   ],
   dev_team: [
     { title: "Dashboard", href: "/dev/dashboard", icon: Home },
-    { title: "System Health", href: "/dev/health", icon: Activity },
-    { title: "Logs", href: "/dev/logs", icon: FileText },
-    { title: "Performance", href: "/dev/performance", icon: TrendingUp },
-    { title: "Deployments", href: "/dev/deployments", icon: Code },
   ],
 };
 
