@@ -9,6 +9,8 @@ const DataScientistDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
+  const [profile, setProfile] = useState<any>(null);
+
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -29,6 +31,14 @@ const DataScientistDashboard = () => {
         return;
       }
 
+      // Fetch profile data
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", session.user.id)
+        .single();
+
+      setProfile(profileData);
       setIsLoading(false);
     };
 
@@ -41,7 +51,7 @@ const DataScientistDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Navbar user={profile ? { name: profile.name, email: profile.email, avatar: profile.avatar } : undefined} />
       <main className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
