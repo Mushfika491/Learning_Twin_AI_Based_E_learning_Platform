@@ -14,6 +14,73 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          activity_id: string
+          activity_time: string | null
+          course_id: string | null
+          event_type: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          activity_id?: string
+          activity_time?: string | null
+          course_id?: string | null
+          event_type: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          activity_id?: string
+          activity_time?: string | null
+          course_id?: string | null
+          event_type?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificates: {
+        Row: {
+          certificate_code: string
+          certificate_id: string
+          course_id: string
+          issue_date: string | null
+          student_id: string
+        }
+        Insert: {
+          certificate_code?: string
+          certificate_id?: string
+          course_id: string
+          issue_date?: string | null
+          student_id: string
+        }
+        Update: {
+          certificate_code?: string
+          certificate_id?: string
+          course_id?: string
+          issue_date?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content: {
         Row: {
           course_id: string
@@ -93,6 +160,41 @@ export type Database = {
           },
         ]
       }
+      discussions: {
+        Row: {
+          body: string
+          course_id: string
+          created_at: string | null
+          created_by_user_id: string
+          discussion_id: string
+          title: string
+        }
+        Insert: {
+          body: string
+          course_id: string
+          created_at?: string | null
+          created_by_user_id: string
+          discussion_id?: string
+          title: string
+        }
+        Update: {
+          body?: string
+          course_id?: string
+          created_at?: string | null
+          created_by_user_id?: string
+          discussion_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discussions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollments: {
         Row: {
           course_id: string
@@ -137,30 +239,185 @@ export type Database = {
       }
       profiles: {
         Row: {
+          achievements: string | null
           avatar: string | null
           created_at: string | null
           email: string
           id: string
+          interests: string | null
+          learning_goals: string | null
           name: string
+          profile_summary: string | null
           role: Database["public"]["Enums"]["app_role"]
+          updated_at: string | null
         }
         Insert: {
+          achievements?: string | null
           avatar?: string | null
           created_at?: string | null
           email: string
           id: string
+          interests?: string | null
+          learning_goals?: string | null
           name: string
+          profile_summary?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
         }
         Update: {
+          achievements?: string | null
           avatar?: string | null
           created_at?: string | null
           email?: string
           id?: string
+          interests?: string | null
+          learning_goals?: string | null
           name?: string
+          profile_summary?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
         }
         Relationships: []
+      }
+      progress: {
+        Row: {
+          course_id: string
+          last_accessed: string | null
+          percentage_completed: number | null
+          progress_id: string
+          student_id: string
+          time_spent_minutes: number | null
+        }
+        Insert: {
+          course_id: string
+          last_accessed?: string | null
+          percentage_completed?: number | null
+          progress_id?: string
+          student_id: string
+          time_spent_minutes?: number | null
+        }
+        Update: {
+          course_id?: string
+          last_accessed?: string | null
+          percentage_completed?: number | null
+          progress_id?: string
+          student_id?: string
+          time_spent_minutes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quizzes: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          difficulty_level: string | null
+          quiz_id: string
+          title: string
+          total_marks: number
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          difficulty_level?: string | null
+          quiz_id?: string
+          title: string
+          total_marks?: number
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          difficulty_level?: string | null
+          quiz_id?: string
+          title?: string
+          total_marks?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quizzes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resources: {
+        Row: {
+          access_level: string | null
+          course_id: string
+          resource_id: string
+          resource_type: string
+          storage_location: string
+          title: string
+        }
+        Insert: {
+          access_level?: string | null
+          course_id: string
+          resource_id?: string
+          resource_type: string
+          storage_location: string
+          title: string
+        }
+        Update: {
+          access_level?: string | null
+          course_id?: string
+          resource_id?: string
+          resource_type?: string
+          storage_location?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resources_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scores: {
+        Row: {
+          attempt_time: string | null
+          feedback_text: string | null
+          obtained_score: number
+          quiz_id: string
+          score_id: string
+          student_id: string
+        }
+        Insert: {
+          attempt_time?: string | null
+          feedback_text?: string | null
+          obtained_score: number
+          quiz_id: string
+          score_id?: string
+          student_id: string
+        }
+        Update: {
+          attempt_time?: string | null
+          feedback_text?: string | null
+          obtained_score?: number
+          quiz_id?: string
+          score_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scores_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["quiz_id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
