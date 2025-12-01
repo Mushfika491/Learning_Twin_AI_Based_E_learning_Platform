@@ -10,7 +10,7 @@ interface SidebarItem {
 
 const roleMenuItems: Record<string, SidebarItem[]> = {
   student: [
-    { title: "Dashboard", href: "/student/dashboard", icon: Home },
+    { title: "Student Dashboard", href: "/student/dashboard", icon: Home },
   ],
   instructor: [
     { title: "Dashboard", href: "/instructor/dashboard", icon: Home },
