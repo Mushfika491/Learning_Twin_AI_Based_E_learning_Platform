@@ -81,6 +81,41 @@ export type Database = {
           },
         ]
       }
+      comments: {
+        Row: {
+          comment_text: string
+          comment_time: string | null
+          created_at: string | null
+          discussion_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          comment_text: string
+          comment_time?: string | null
+          created_at?: string | null
+          discussion_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          comment_text?: string
+          comment_time?: string | null
+          created_at?: string | null
+          discussion_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_discussion_id_fkey"
+            columns: ["discussion_id"]
+            isOneToOne: false
+            referencedRelation: "discussions"
+            referencedColumns: ["discussion_id"]
+          },
+        ]
+      }
       content: {
         Row: {
           course_id: string
@@ -122,13 +157,54 @@ export type Database = {
           },
         ]
       }
+      course_prerequisites: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          id: string
+          prerequisite_course_id: string | null
+          prerequisite_text: string | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          id?: string
+          prerequisite_course_id?: string | null
+          prerequisite_text?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          id?: string
+          prerequisite_course_id?: string | null
+          prerequisite_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_prerequisites_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_prerequisites_prerequisite_course_id_fkey"
+            columns: ["prerequisite_course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           category: string
           created_at: string | null
           description: string | null
+          difficulty_level: string | null
           id: string
           instructor_id: string | null
+          status: string | null
           thumbnail: string | null
           title: string
         }
@@ -136,8 +212,10 @@ export type Database = {
           category: string
           created_at?: string | null
           description?: string | null
+          difficulty_level?: string | null
           id?: string
           instructor_id?: string | null
+          status?: string | null
           thumbnail?: string | null
           title: string
         }
@@ -145,8 +223,10 @@ export type Database = {
           category?: string
           created_at?: string | null
           description?: string | null
+          difficulty_level?: string | null
           id?: string
           instructor_id?: string | null
+          status?: string | null
           thumbnail?: string | null
           title?: string
         }
@@ -167,6 +247,7 @@ export type Database = {
           created_at: string | null
           created_by_user_id: string
           discussion_id: string
+          discussion_type: string | null
           title: string
         }
         Insert: {
@@ -175,6 +256,7 @@ export type Database = {
           created_at?: string | null
           created_by_user_id: string
           discussion_id?: string
+          discussion_type?: string | null
           title: string
         }
         Update: {
@@ -183,6 +265,7 @@ export type Database = {
           created_at?: string | null
           created_by_user_id?: string
           discussion_id?: string
+          discussion_type?: string | null
           title?: string
         }
         Relationships: [
@@ -237,6 +320,69 @@ export type Database = {
           },
         ]
       }
+      instructor_expertise: {
+        Row: {
+          created_at: string | null
+          expertise: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expertise: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expertise?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      instructor_profiles: {
+        Row: {
+          bio: string | null
+          certification: string | null
+          created_at: string | null
+          degree: string | null
+          experience_years: number | null
+          field_of_study: string | null
+          graduation_year: number | null
+          id: string
+          institution: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          certification?: string | null
+          created_at?: string | null
+          degree?: string | null
+          experience_years?: number | null
+          field_of_study?: string | null
+          graduation_year?: number | null
+          id?: string
+          institution?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          certification?: string | null
+          created_at?: string | null
+          degree?: string | null
+          experience_years?: number | null
+          field_of_study?: string | null
+          graduation_year?: number | null
+          id?: string
+          institution?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           achievements: string | null
@@ -247,6 +393,7 @@ export type Database = {
           interests: string | null
           learning_goals: string | null
           name: string
+          phone_number: string | null
           profile_summary: string | null
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string | null
@@ -260,6 +407,7 @@ export type Database = {
           interests?: string | null
           learning_goals?: string | null
           name: string
+          phone_number?: string | null
           profile_summary?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string | null
@@ -273,6 +421,7 @@ export type Database = {
           interests?: string | null
           learning_goals?: string | null
           name?: string
+          phone_number?: string | null
           profile_summary?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string | null
@@ -342,6 +491,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "quizzes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ratings_reviews: {
+        Row: {
+          content: string | null
+          course_id: string
+          created_at: string | null
+          id: string
+          rating_score: number
+          student_id: string
+        }
+        Insert: {
+          content?: string | null
+          course_id: string
+          created_at?: string | null
+          id?: string
+          rating_score: number
+          student_id: string
+        }
+        Update: {
+          content?: string | null
+          course_id?: string
+          created_at?: string | null
+          id?: string
+          rating_score?: number
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_reviews_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
