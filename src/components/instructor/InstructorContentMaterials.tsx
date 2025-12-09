@@ -3,13 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Search, FileText, Video, Link as LinkIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 
@@ -37,18 +36,71 @@ interface Quiz {
   created_at: string | null;
 }
 
+interface Question {
+  id: string;
+  assessment_id: string;
+  question_number: number;
+  question_type: string;
+  category: string;
+  question_text: string;
+  correct_answer: string;
+  upload_time: string;
+}
+
+interface Assignment {
+  id: string;
+  title: string;
+  assessment_id: string;
+  points: number;
+  due_date_time: string;
+  upload_time: string;
+  rubrics: string;
+  topic: string;
+}
+
+interface StudentAssessmentAnswer {
+  id: string;
+  student_name: string;
+  student_id: string;
+  assessment_title: string;
+  assessment_id: string;
+  assessment_type: string;
+  due_date_time: string;
+  marks: number;
+  submitted_time: string;
+  answers: string;
+}
+
 export function InstructorContentMaterials() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [content, setContent] = useState<Content[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [studentAnswers, setStudentAnswers] = useState<StudentAssessmentAnswer[]>([]);
+  
+  const [materialSearchTerm, setMaterialSearchTerm] = useState("");
+  const [quizSearchTerm, setQuizSearchTerm] = useState("");
+  const [questionSearchTerm, setQuestionSearchTerm] = useState("");
+  const [assignmentSearchTerm, setAssignmentSearchTerm] = useState("");
+  const [studentAnswerSearchTerm, setStudentAnswerSearchTerm] = useState("");
+  
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
   const [isContentDialogOpen, setIsContentDialogOpen] = useState(false);
   const [isQuizDialogOpen, setIsQuizDialogOpen] = useState(false);
+  const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
+  const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
+  
   const [editingContent, setEditingContent] = useState<Content | null>(null);
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
+  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  
   const [deleteContentId, setDeleteContentId] = useState<string | null>(null);
   const [deleteQuizId, setDeleteQuizId] = useState<string | null>(null);
+  const [deleteQuestionId, setDeleteQuestionId] = useState<string | null>(null);
+  const [deleteAssignmentId, setDeleteAssignmentId] = useState<string | null>(null);
+  
   const { toast } = useToast();
 
   const [contentForm, setContentForm] = useState({
@@ -66,8 +118,46 @@ export function InstructorContentMaterials() {
     difficulty_level: "Intermediate",
   });
 
+  const [questionForm, setQuestionForm] = useState({
+    assessment_id: "",
+    question_number: 1,
+    question_type: "multiple_choice",
+    category: "",
+    question_text: "",
+    correct_answer: "",
+  });
+
+  const [assignmentForm, setAssignmentForm] = useState({
+    title: "",
+    assessment_id: "",
+    points: 100,
+    due_date_time: "",
+    rubrics: "",
+    topic: "",
+  });
+
+  // Mock data for demonstration
+  const mockQuestions: Question[] = [
+    { id: "q1", assessment_id: "a1", question_number: 1, question_type: "Multiple Choice", category: "Basics", question_text: "What is React?", correct_answer: "A JavaScript library", upload_time: new Date().toISOString() },
+    { id: "q2", assessment_id: "a2", question_number: 2, question_type: "True/False", category: "Advanced", question_text: "React uses virtual DOM", correct_answer: "True", upload_time: new Date().toISOString() },
+  ];
+
+  const mockAssignments: Assignment[] = [
+    { id: "as1", title: "React Basics Assignment", assessment_id: "a1", points: 50, due_date_time: "2025-01-15T23:59:00", upload_time: new Date().toISOString(), rubrics: "Code quality, functionality", topic: "Components" },
+    { id: "as2", title: "State Management Project", assessment_id: "a2", points: 100, due_date_time: "2025-01-20T23:59:00", upload_time: new Date().toISOString(), rubrics: "Architecture, implementation", topic: "State" },
+  ];
+
+  const mockStudentAnswers: StudentAssessmentAnswer[] = [
+    { id: "sa1", student_name: "John Doe", student_id: "s1", assessment_title: "React Quiz 1", assessment_id: "a1", assessment_type: "Quiz", due_date_time: "2025-01-10T23:59:00", marks: 85, submitted_time: "2025-01-10T22:30:00", answers: "View answers" },
+    { id: "sa2", student_name: "Jane Smith", student_id: "s2", assessment_title: "React Assignment", assessment_id: "a2", assessment_type: "Assignment", due_date_time: "2025-01-15T23:59:00", marks: 92, submitted_time: "2025-01-15T20:15:00", answers: "View answers" },
+  ];
+
   useEffect(() => {
     fetchData();
+    // Set mock data
+    setQuestions(mockQuestions);
+    setAssignments(mockAssignments);
+    setStudentAnswers(mockStudentAnswers);
   }, []);
 
   const fetchData = async () => {
@@ -161,6 +251,42 @@ export function InstructorContentMaterials() {
     }
   };
 
+  const handleQuestionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const newQuestion: Question = {
+      id: `q${Date.now()}`,
+      ...questionForm,
+      upload_time: new Date().toISOString(),
+    };
+    
+    if (editingQuestion) {
+      setQuestions(questions.map(q => q.id === editingQuestion.id ? { ...newQuestion, id: editingQuestion.id } : q));
+      toast({ title: "Success", description: "Question updated" });
+    } else {
+      setQuestions([...questions, newQuestion]);
+      toast({ title: "Success", description: "Question created" });
+    }
+    resetQuestionForm();
+  };
+
+  const handleAssignmentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const newAssignment: Assignment = {
+      id: `as${Date.now()}`,
+      ...assignmentForm,
+      upload_time: new Date().toISOString(),
+    };
+    
+    if (editingAssignment) {
+      setAssignments(assignments.map(a => a.id === editingAssignment.id ? { ...newAssignment, id: editingAssignment.id } : a));
+      toast({ title: "Success", description: "Assignment updated" });
+    } else {
+      setAssignments([...assignments, newAssignment]);
+      toast({ title: "Success", description: "Assignment created" });
+    }
+    resetAssignmentForm();
+  };
+
   const handleDeleteContent = async () => {
     if (!deleteContentId) return;
     const { error } = await supabase.from("content").delete().eq("id", deleteContentId);
@@ -185,6 +311,20 @@ export function InstructorContentMaterials() {
     setDeleteQuizId(null);
   };
 
+  const handleDeleteQuestion = () => {
+    if (!deleteQuestionId) return;
+    setQuestions(questions.filter(q => q.id !== deleteQuestionId));
+    toast({ title: "Success", description: "Question deleted" });
+    setDeleteQuestionId(null);
+  };
+
+  const handleDeleteAssignment = () => {
+    if (!deleteAssignmentId) return;
+    setAssignments(assignments.filter(a => a.id !== deleteAssignmentId));
+    toast({ title: "Success", description: "Assignment deleted" });
+    setDeleteAssignmentId(null);
+  };
+
   const resetContentForm = () => {
     setContentForm({ course_id: "", type: "document", title: "", link: "", order_index: 0 });
     setEditingContent(null);
@@ -197,29 +337,41 @@ export function InstructorContentMaterials() {
     setIsQuizDialogOpen(false);
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "video": return <Video className="h-4 w-4" />;
-      case "document": return <FileText className="h-4 w-4" />;
-      default: return <LinkIcon className="h-4 w-4" />;
-    }
+  const resetQuestionForm = () => {
+    setQuestionForm({ assessment_id: "", question_number: 1, question_type: "multiple_choice", category: "", question_text: "", correct_answer: "" });
+    setEditingQuestion(null);
+    setIsQuestionDialogOpen(false);
+  };
+
+  const resetAssignmentForm = () => {
+    setAssignmentForm({ title: "", assessment_id: "", points: 100, due_date_time: "", rubrics: "", topic: "" });
+    setEditingAssignment(null);
+    setIsAssignmentDialogOpen(false);
   };
 
   const filteredContent = content.filter(c => {
-    const course = courses.find(cr => cr.id === c.course_id);
-    const matchesSearch = c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (course?.title || "").toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = c.title.toLowerCase().includes(materialSearchTerm.toLowerCase());
     const matchesCourse = selectedCourse === "all" || c.course_id === selectedCourse;
     return matchesSearch && matchesCourse;
   });
 
   const filteredQuizzes = quizzes.filter(q => {
-    const course = courses.find(cr => cr.id === q.course_id);
-    const matchesSearch = q.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (course?.title || "").toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = q.quiz_id.toLowerCase().includes(quizSearchTerm.toLowerCase());
     const matchesCourse = selectedCourse === "all" || q.course_id === selectedCourse;
     return matchesSearch && matchesCourse;
   });
+
+  const filteredQuestions = questions.filter(q => 
+    q.id.toLowerCase().includes(questionSearchTerm.toLowerCase())
+  );
+
+  const filteredAssignments = assignments.filter(a => 
+    a.assessment_id.toLowerCase().includes(assignmentSearchTerm.toLowerCase())
+  );
+
+  const filteredStudentAnswers = studentAnswers.filter(sa => 
+    sa.assessment_id.toLowerCase().includes(studentAnswerSearchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -231,15 +383,6 @@ export function InstructorContentMaterials() {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search content..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-64"
-          />
-        </div>
         <Select value={selectedCourse} onValueChange={setSelectedCourse}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Filter by course" />
@@ -256,9 +399,13 @@ export function InstructorContentMaterials() {
       <Tabs defaultValue="materials" className="space-y-4">
         <TabsList>
           <TabsTrigger value="materials">Lecture Materials</TabsTrigger>
-          <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
+          <TabsTrigger value="quizzes">Quiz Assignments</TabsTrigger>
+          <TabsTrigger value="questions">Questions</TabsTrigger>
+          <TabsTrigger value="assignments">Assignments</TabsTrigger>
+          <TabsTrigger value="studentAnswers">Student Assessment Answers</TabsTrigger>
         </TabsList>
 
+        {/* Lecture Materials Tab */}
         <TabsContent value="materials">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -272,56 +419,59 @@ export function InstructorContentMaterials() {
               </Button>
             </CardHeader>
             <CardContent>
+              <div className="flex items-center gap-2 mb-4">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by Title..."
+                  value={materialSearchTerm}
+                  onChange={(e) => setMaterialSearchTerm(e.target.value)}
+                  className="w-64"
+                />
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Content ID</TableHead>
                     <TableHead>Title</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Course</TableHead>
-                    <TableHead>Order</TableHead>
-                    <TableHead>Created</TableHead>
+                    <TableHead>Topic</TableHead>
+                    <TableHead>Lecture Duration</TableHead>
+                    <TableHead>File Count</TableHead>
+                    <TableHead>Upload Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredContent.map((item) => {
-                    const course = courses.find(c => c.id === item.course_id);
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.title}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {getTypeIcon(item.type)}
-                            <span className="capitalize">{item.type}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{course?.title || "-"}</TableCell>
-                        <TableCell>{item.order_index}</TableCell>
-                        <TableCell>{item.created_at ? new Date(item.created_at).toLocaleDateString() : "-"}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => {
-                            setEditingContent(item);
-                            setContentForm({
-                              course_id: item.course_id,
-                              type: item.type,
-                              title: item.title,
-                              link: item.link || "",
-                              order_index: item.order_index || 0,
-                            });
-                            setIsContentDialogOpen(true);
-                          }}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => setDeleteContentId(item.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {filteredContent.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-mono text-sm">{item.id.slice(0, 8)}...</TableCell>
+                      <TableCell className="font-medium">{item.title}</TableCell>
+                      <TableCell className="capitalize">{item.type}</TableCell>
+                      <TableCell>{item.order_index} mins</TableCell>
+                      <TableCell>1</TableCell>
+                      <TableCell>{item.created_at ? new Date(item.created_at).toLocaleDateString() : "-"}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => {
+                          setEditingContent(item);
+                          setContentForm({
+                            course_id: item.course_id,
+                            type: item.type,
+                            title: item.title,
+                            link: item.link || "",
+                            order_index: item.order_index || 0,
+                          });
+                          setIsContentDialogOpen(true);
+                        }}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteContentId(item.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                   {filteredContent.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         No content found
                       </TableCell>
                     </TableRow>
@@ -332,11 +482,12 @@ export function InstructorContentMaterials() {
           </Card>
         </TabsContent>
 
+        {/* Quiz Assignments Tab */}
         <TabsContent value="quizzes">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Quizzes & Assessments</CardTitle>
+                <CardTitle>Quiz Assignments</CardTitle>
                 <CardDescription>Manage course quizzes</CardDescription>
               </div>
               <Button onClick={() => { resetQuizForm(); setIsQuizDialogOpen(true); }}>
@@ -345,51 +496,285 @@ export function InstructorContentMaterials() {
               </Button>
             </CardHeader>
             <CardContent>
+              <div className="flex items-center gap-2 mb-4">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by Assessment ID..."
+                  value={quizSearchTerm}
+                  onChange={(e) => setQuizSearchTerm(e.target.value)}
+                  className="w-64"
+                />
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Assessment ID</TableHead>
                     <TableHead>Title</TableHead>
-                    <TableHead>Course</TableHead>
-                    <TableHead>Total Marks</TableHead>
-                    <TableHead>Difficulty</TableHead>
-                    <TableHead>Created</TableHead>
+                    <TableHead>Points</TableHead>
+                    <TableHead>Time Limit</TableHead>
+                    <TableHead>Files Count</TableHead>
+                    <TableHead>Topic</TableHead>
+                    <TableHead>Upload Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredQuizzes.map((quiz) => {
-                    const course = courses.find(c => c.id === quiz.course_id);
-                    return (
-                      <TableRow key={quiz.quiz_id}>
-                        <TableCell className="font-medium">{quiz.title}</TableCell>
-                        <TableCell>{course?.title || "-"}</TableCell>
-                        <TableCell>{quiz.total_marks}</TableCell>
-                        <TableCell>{quiz.difficulty_level || "-"}</TableCell>
-                        <TableCell>{quiz.created_at ? new Date(quiz.created_at).toLocaleDateString() : "-"}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => {
-                            setEditingQuiz(quiz);
-                            setQuizForm({
-                              course_id: quiz.course_id,
-                              title: quiz.title,
-                              total_marks: quiz.total_marks,
-                              difficulty_level: quiz.difficulty_level || "Intermediate",
-                            });
-                            setIsQuizDialogOpen(true);
-                          }}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => setDeleteQuizId(quiz.quiz_id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {filteredQuizzes.map((quiz) => (
+                    <TableRow key={quiz.quiz_id}>
+                      <TableCell className="font-mono text-sm">{quiz.quiz_id.slice(0, 8)}...</TableCell>
+                      <TableCell className="font-medium">{quiz.title}</TableCell>
+                      <TableCell>{quiz.total_marks}</TableCell>
+                      <TableCell>30 mins</TableCell>
+                      <TableCell>1</TableCell>
+                      <TableCell>{quiz.difficulty_level || "-"}</TableCell>
+                      <TableCell>{quiz.created_at ? new Date(quiz.created_at).toLocaleDateString() : "-"}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => {
+                          setEditingQuiz(quiz);
+                          setQuizForm({
+                            course_id: quiz.course_id,
+                            title: quiz.title,
+                            total_marks: quiz.total_marks,
+                            difficulty_level: quiz.difficulty_level || "Intermediate",
+                          });
+                          setIsQuizDialogOpen(true);
+                        }}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteQuizId(quiz.quiz_id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                   {filteredQuizzes.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                         No quizzes found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Questions Tab */}
+        <TabsContent value="questions">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Questions</CardTitle>
+                <CardDescription>Manage quiz questions</CardDescription>
+              </div>
+              <Button onClick={() => { resetQuestionForm(); setIsQuestionDialogOpen(true); }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Question
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 mb-4">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by Question ID..."
+                  value={questionSearchTerm}
+                  onChange={(e) => setQuestionSearchTerm(e.target.value)}
+                  className="w-64"
+                />
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Question ID</TableHead>
+                    <TableHead>Assessment ID</TableHead>
+                    <TableHead>Question Number</TableHead>
+                    <TableHead>Question Type</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Question Text</TableHead>
+                    <TableHead>Correct Answer</TableHead>
+                    <TableHead>Upload Time</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredQuestions.map((question) => (
+                    <TableRow key={question.id}>
+                      <TableCell className="font-mono text-sm">{question.id}</TableCell>
+                      <TableCell className="font-mono text-sm">{question.assessment_id}</TableCell>
+                      <TableCell>{question.question_number}</TableCell>
+                      <TableCell>{question.question_type}</TableCell>
+                      <TableCell>{question.category}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{question.question_text}</TableCell>
+                      <TableCell>{question.correct_answer}</TableCell>
+                      <TableCell>{new Date(question.upload_time).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => {
+                          setEditingQuestion(question);
+                          setQuestionForm({
+                            assessment_id: question.assessment_id,
+                            question_number: question.question_number,
+                            question_type: question.question_type,
+                            category: question.category,
+                            question_text: question.question_text,
+                            correct_answer: question.correct_answer,
+                          });
+                          setIsQuestionDialogOpen(true);
+                        }}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteQuestionId(question.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredQuestions.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                        No questions found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Assignments Tab */}
+        <TabsContent value="assignments">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Assignments</CardTitle>
+                <CardDescription>Manage course assignments</CardDescription>
+              </div>
+              <Button onClick={() => { resetAssignmentForm(); setIsAssignmentDialogOpen(true); }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Assignment
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 mb-4">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by Assessment ID..."
+                  value={assignmentSearchTerm}
+                  onChange={(e) => setAssignmentSearchTerm(e.target.value)}
+                  className="w-64"
+                />
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Assessment ID</TableHead>
+                    <TableHead>Points</TableHead>
+                    <TableHead>Due Date Time</TableHead>
+                    <TableHead>Upload Time</TableHead>
+                    <TableHead>Rubrics</TableHead>
+                    <TableHead>Topic</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAssignments.map((assignment) => (
+                    <TableRow key={assignment.id}>
+                      <TableCell className="font-medium">{assignment.title}</TableCell>
+                      <TableCell className="font-mono text-sm">{assignment.assessment_id}</TableCell>
+                      <TableCell>{assignment.points}</TableCell>
+                      <TableCell>{new Date(assignment.due_date_time).toLocaleString()}</TableCell>
+                      <TableCell>{new Date(assignment.upload_time).toLocaleDateString()}</TableCell>
+                      <TableCell className="max-w-[150px] truncate">{assignment.rubrics}</TableCell>
+                      <TableCell>{assignment.topic}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => {
+                          setEditingAssignment(assignment);
+                          setAssignmentForm({
+                            title: assignment.title,
+                            assessment_id: assignment.assessment_id,
+                            points: assignment.points,
+                            due_date_time: assignment.due_date_time,
+                            rubrics: assignment.rubrics,
+                            topic: assignment.topic,
+                          });
+                          setIsAssignmentDialogOpen(true);
+                        }}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteAssignmentId(assignment.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredAssignments.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        No assignments found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Student Assessment Answers Tab */}
+        <TabsContent value="studentAnswers">
+          <Card>
+            <CardHeader>
+              <CardTitle>Student Assessment Answers</CardTitle>
+              <CardDescription>View student submissions and answers</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 mb-4">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by Assessment ID..."
+                  value={studentAnswerSearchTerm}
+                  onChange={(e) => setStudentAnswerSearchTerm(e.target.value)}
+                  className="w-64"
+                />
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student Name</TableHead>
+                    <TableHead>Student ID</TableHead>
+                    <TableHead>Assessment Title</TableHead>
+                    <TableHead>Assessment ID</TableHead>
+                    <TableHead>Assessment Type</TableHead>
+                    <TableHead>Due Date Time</TableHead>
+                    <TableHead>Marks</TableHead>
+                    <TableHead>Submitted Time</TableHead>
+                    <TableHead>Answers</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredStudentAnswers.map((answer) => (
+                    <TableRow key={answer.id}>
+                      <TableCell className="font-medium">{answer.student_name}</TableCell>
+                      <TableCell className="font-mono text-sm">{answer.student_id}</TableCell>
+                      <TableCell>{answer.assessment_title}</TableCell>
+                      <TableCell className="font-mono text-sm">{answer.assessment_id}</TableCell>
+                      <TableCell>{answer.assessment_type}</TableCell>
+                      <TableCell>{new Date(answer.due_date_time).toLocaleString()}</TableCell>
+                      <TableCell>{answer.marks}</TableCell>
+                      <TableCell>{new Date(answer.submitted_time).toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredStudentAnswers.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                        No student answers found
                       </TableCell>
                     </TableRow>
                   )}
@@ -426,7 +811,7 @@ export function InstructorContentMaterials() {
               <Input value={contentForm.title} onChange={(e) => setContentForm({ ...contentForm, title: e.target.value })} required />
             </div>
             <div className="space-y-2">
-              <Label>Type</Label>
+              <Label>Topic</Label>
               <Select value={contentForm.type} onValueChange={(v) => setContentForm({ ...contentForm, type: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -441,7 +826,7 @@ export function InstructorContentMaterials() {
               <Input type="url" value={contentForm.link} onChange={(e) => setContentForm({ ...contentForm, link: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>Order Index</Label>
+              <Label>Lecture Duration (mins)</Label>
               <Input type="number" value={contentForm.order_index} onChange={(e) => setContentForm({ ...contentForm, order_index: parseInt(e.target.value) || 0 })} />
             </div>
             <div className="flex justify-end gap-2">
@@ -478,11 +863,11 @@ export function InstructorContentMaterials() {
               <Input value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} required />
             </div>
             <div className="space-y-2">
-              <Label>Total Marks</Label>
+              <Label>Points</Label>
               <Input type="number" value={quizForm.total_marks} onChange={(e) => setQuizForm({ ...quizForm, total_marks: parseInt(e.target.value) || 100 })} />
             </div>
             <div className="space-y-2">
-              <Label>Difficulty Level</Label>
+              <Label>Topic</Label>
               <Select value={quizForm.difficulty_level} onValueChange={(v) => setQuizForm({ ...quizForm, difficulty_level: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -500,6 +885,107 @@ export function InstructorContentMaterials() {
         </DialogContent>
       </Dialog>
 
+      {/* Question Dialog */}
+      <Dialog open={isQuestionDialogOpen} onOpenChange={setIsQuestionDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingQuestion ? "Edit Question" : "Add Question"}</DialogTitle>
+            <DialogDescription>
+              {editingQuestion ? "Update question details" : "Create a new question"}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleQuestionSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Assessment ID</Label>
+                <Input value={questionForm.assessment_id} onChange={(e) => setQuestionForm({ ...questionForm, assessment_id: e.target.value })} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Question Number</Label>
+                <Input type="number" value={questionForm.question_number} onChange={(e) => setQuestionForm({ ...questionForm, question_number: parseInt(e.target.value) || 1 })} required />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Question Type</Label>
+                <Select value={questionForm.question_type} onValueChange={(v) => setQuestionForm({ ...questionForm, question_type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+                    <SelectItem value="true_false">True/False</SelectItem>
+                    <SelectItem value="short_answer">Short Answer</SelectItem>
+                    <SelectItem value="essay">Essay</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Input value={questionForm.category} onChange={(e) => setQuestionForm({ ...questionForm, category: e.target.value })} required />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Question Text</Label>
+              <Input value={questionForm.question_text} onChange={(e) => setQuestionForm({ ...questionForm, question_text: e.target.value })} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Correct Answer</Label>
+              <Input value={questionForm.correct_answer} onChange={(e) => setQuestionForm({ ...questionForm, correct_answer: e.target.value })} required />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={resetQuestionForm}>Cancel</Button>
+              <Button type="submit">{editingQuestion ? "Update" : "Create"}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assignment Dialog */}
+      <Dialog open={isAssignmentDialogOpen} onOpenChange={setIsAssignmentDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingAssignment ? "Edit Assignment" : "Add Assignment"}</DialogTitle>
+            <DialogDescription>
+              {editingAssignment ? "Update assignment details" : "Create a new assignment"}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAssignmentSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input value={assignmentForm.title} onChange={(e) => setAssignmentForm({ ...assignmentForm, title: e.target.value })} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Assessment ID</Label>
+                <Input value={assignmentForm.assessment_id} onChange={(e) => setAssignmentForm({ ...assignmentForm, assessment_id: e.target.value })} required />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Points</Label>
+                <Input type="number" value={assignmentForm.points} onChange={(e) => setAssignmentForm({ ...assignmentForm, points: parseInt(e.target.value) || 100 })} required />
+              </div>
+              <div className="space-y-2">
+                <Label>Due Date Time</Label>
+                <Input type="datetime-local" value={assignmentForm.due_date_time} onChange={(e) => setAssignmentForm({ ...assignmentForm, due_date_time: e.target.value })} required />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Topic</Label>
+              <Input value={assignmentForm.topic} onChange={(e) => setAssignmentForm({ ...assignmentForm, topic: e.target.value })} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Rubrics</Label>
+              <Input value={assignmentForm.rubrics} onChange={(e) => setAssignmentForm({ ...assignmentForm, rubrics: e.target.value })} required />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={resetAssignmentForm}>Cancel</Button>
+              <Button type="submit">{editingAssignment ? "Update" : "Create"}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialogs */}
       <DeleteConfirmDialog
         open={!!deleteContentId}
         onOpenChange={() => setDeleteContentId(null)}
@@ -513,6 +999,20 @@ export function InstructorContentMaterials() {
         onConfirm={handleDeleteQuiz}
         title="Delete Quiz"
         description="Are you sure you want to delete this quiz?"
+      />
+      <DeleteConfirmDialog
+        open={!!deleteQuestionId}
+        onOpenChange={() => setDeleteQuestionId(null)}
+        onConfirm={handleDeleteQuestion}
+        title="Delete Question"
+        description="Are you sure you want to delete this question?"
+      />
+      <DeleteConfirmDialog
+        open={!!deleteAssignmentId}
+        onOpenChange={() => setDeleteAssignmentId(null)}
+        onConfirm={handleDeleteAssignment}
+        title="Delete Assignment"
+        description="Are you sure you want to delete this assignment?"
       />
     </div>
   );
