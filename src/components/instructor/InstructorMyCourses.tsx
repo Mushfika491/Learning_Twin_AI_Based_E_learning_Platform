@@ -44,6 +44,8 @@ export function InstructorMyCourses() {
   const [prerequisites, setPrerequisites] = useState<Prerequisite[]>([]);
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [prereqSearchTerm, setPrereqSearchTerm] = useState("");
+  const [ratingsSearchTerm, setRatingsSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -163,11 +165,13 @@ export function InstructorMyCourses() {
       (c.difficulty_level || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getPrerequisitesForCourse = (courseId: string) =>
-    prerequisites.filter((p) => p.course_id === courseId);
+  const filteredPrerequisites = prereqSearchTerm
+    ? prerequisites.filter((p) => p.course_id.toLowerCase().includes(prereqSearchTerm.toLowerCase()))
+    : prerequisites;
 
-  const getRatingsForCourse = (courseId: string) =>
-    ratings.filter((r) => r.course_id === courseId);
+  const filteredRatings = ratingsSearchTerm
+    ? ratings.filter((r) => r.course_id.toLowerCase().includes(ratingsSearchTerm.toLowerCase()))
+    : ratings;
 
   return (
     <div className="space-y-6">
@@ -207,6 +211,7 @@ export function InstructorMyCourses() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Course ID</TableHead>
                     <TableHead>Title</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Category</TableHead>
@@ -218,6 +223,7 @@ export function InstructorMyCourses() {
                 <TableBody>
                   {filteredCourses.map((course) => (
                     <TableRow key={course.id}>
+                      <TableCell className="font-mono text-xs">{course.id.slice(0, 8)}...</TableCell>
                       <TableCell className="font-medium">{course.title}</TableCell>
                       <TableCell className="max-w-xs truncate">{course.description}</TableCell>
                       <TableCell>{course.category}</TableCell>
@@ -239,7 +245,7 @@ export function InstructorMyCourses() {
                   ))}
                   {filteredCourses.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         No courses found
                       </TableCell>
                     </TableRow>
@@ -255,29 +261,38 @@ export function InstructorMyCourses() {
             <CardHeader>
               <CardTitle>Course Prerequisites</CardTitle>
               <CardDescription>View prerequisites for your courses</CardDescription>
+              <div className="flex items-center gap-2 mt-2">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by Course ID..."
+                  value={prereqSearchTerm}
+                  onChange={(e) => setPrereqSearchTerm(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Course</TableHead>
+                    <TableHead>Course ID</TableHead>
                     <TableHead>Prerequisites</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {courses.map((course) => {
-                    const prereqs = getPrerequisitesForCourse(course.id);
-                    return (
-                      <TableRow key={course.id}>
-                        <TableCell className="font-medium">{course.title}</TableCell>
-                        <TableCell>
-                          {prereqs.length > 0
-                            ? prereqs.map((p) => p.prerequisite_text).join(", ")
-                            : "None"}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {filteredPrerequisites.map((prereq) => (
+                    <TableRow key={prereq.id}>
+                      <TableCell className="font-mono text-xs">{prereq.course_id.slice(0, 8)}...</TableCell>
+                      <TableCell>{prereq.prerequisite_text || "None"}</TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredPrerequisites.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
+                        No prerequisites found
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -289,41 +304,42 @@ export function InstructorMyCourses() {
             <CardHeader>
               <CardTitle>Ratings & Reviews</CardTitle>
               <CardDescription>Student feedback on your courses</CardDescription>
+              <div className="flex items-center gap-2 mt-2">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by Course ID..."
+                  value={ratingsSearchTerm}
+                  onChange={(e) => setRatingsSearchTerm(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Course</TableHead>
-                    <TableHead>Rating</TableHead>
-                    <TableHead>Review</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Rating ID</TableHead>
+                    <TableHead>Course ID</TableHead>
+                    <TableHead>Student ID</TableHead>
+                    <TableHead>Rating Score</TableHead>
+                    <TableHead>Content</TableHead>
+                    <TableHead>Created At</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {ratings.map((rating) => {
-                    const course = courses.find((c) => c.id === rating.course_id);
-                    return (
-                      <TableRow key={rating.id}>
-                        <TableCell className="font-medium">{course?.title || "Unknown"}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${i < rating.rating_score ? "fill-amber-400 text-amber-400" : "text-muted"}`}
-                              />
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate">{rating.content || "-"}</TableCell>
-                        <TableCell>{rating.created_at ? new Date(rating.created_at).toLocaleDateString() : "-"}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {ratings.length === 0 && (
+                  {filteredRatings.map((rating) => (
+                    <TableRow key={rating.id}>
+                      <TableCell className="font-mono text-xs">{rating.id.slice(0, 8)}...</TableCell>
+                      <TableCell className="font-mono text-xs">{rating.course_id.slice(0, 8)}...</TableCell>
+                      <TableCell className="font-mono text-xs">{rating.student_id.slice(0, 8)}...</TableCell>
+                      <TableCell>{rating.rating_score}</TableCell>
+                      <TableCell className="max-w-xs truncate">{rating.content || "-"}</TableCell>
+                      <TableCell>{rating.created_at ? new Date(rating.created_at).toLocaleDateString() : "-"}</TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredRatings.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                         No ratings yet
                       </TableCell>
                     </TableRow>
