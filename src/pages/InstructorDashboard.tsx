@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { RoleSidebar } from "@/components/RoleSidebar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { InstructorDashboardHome } from "@/components/instructor/InstructorDashboardHome";
 import { InstructorMyCourses } from "@/components/instructor/InstructorMyCourses";
@@ -15,6 +14,8 @@ const InstructorDashboard = () => {
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "home";
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -60,46 +61,30 @@ const InstructorDashboard = () => {
     );
   }
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case "courses":
+        return <InstructorMyCourses />;
+      case "content":
+        return <InstructorContentMaterials />;
+      case "students":
+        return <InstructorStudentPerformance />;
+      case "discussions":
+        return <InstructorDiscussions />;
+      case "profile":
+        return <InstructorProfileExpertise />;
+      default:
+        return <InstructorDashboardHome />;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar user={profile} />
       <div className="flex w-full">
         <RoleSidebar role="instructor" />
         <div className="flex-1 p-8">
-          <Tabs defaultValue="home" className="space-y-6">
-            <TabsList className="flex-wrap">
-              <TabsTrigger value="home">Dashboard Home</TabsTrigger>
-              <TabsTrigger value="courses">My Courses</TabsTrigger>
-              <TabsTrigger value="content">Content & Materials</TabsTrigger>
-              <TabsTrigger value="students">Students & Performance</TabsTrigger>
-              <TabsTrigger value="discussions">Discussions</TabsTrigger>
-              <TabsTrigger value="profile">Profile & Expertise</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="home">
-              <InstructorDashboardHome />
-            </TabsContent>
-            
-            <TabsContent value="courses">
-              <InstructorMyCourses />
-            </TabsContent>
-            
-            <TabsContent value="content">
-              <InstructorContentMaterials />
-            </TabsContent>
-            
-            <TabsContent value="students">
-              <InstructorStudentPerformance />
-            </TabsContent>
-            
-            <TabsContent value="discussions">
-              <InstructorDiscussions />
-            </TabsContent>
-            
-            <TabsContent value="profile">
-              <InstructorProfileExpertise />
-            </TabsContent>
-          </Tabs>
+          {renderContent()}
         </div>
       </div>
     </div>
