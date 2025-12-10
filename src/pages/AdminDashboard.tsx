@@ -6,6 +6,7 @@ import { RoleSidebar } from "@/components/RoleSidebar";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { UserManagementTable } from "@/components/admin/UserManagementTable";
 import { ReportsTable } from "@/components/admin/ReportsTable";
+import { SystemSettingsTable } from "@/components/admin/SystemSettingsTable";
 
 const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -56,12 +57,7 @@ const AdminDashboard = () => {
       case "reports":
         return <ReportsTable />;
       case "settings":
-        return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">System Settings</h3>
-            <p className="text-muted-foreground">System settings configuration coming soon.</p>
-          </div>
-        );
+        return <SystemSettingsTable />;
       default:
         return <AnalyticsDashboard />;
     }
