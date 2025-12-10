@@ -5,15 +5,16 @@ import { BookOpen, Award, TrendingUp, GraduationCap, Bell, FileUp } from "lucide
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Badge } from "@/components/ui/badge";
 
-// Mock data for Learning Activity chart
+// Mock data for Learning Activity chart (continuous line)
 const mockLearningActivityData = [
-  { day: "Mon", hours: 2.5 },
-  { day: "Tue", hours: 3.2 },
-  { day: "Wed", hours: 1.8 },
-  { day: "Thu", hours: 4.0 },
-  { day: "Fri", hours: 2.1 },
-  { day: "Sat", hours: 3.5 },
-  { day: "Sun", hours: 1.2 },
+  { name: "Week 1", activity: 12 },
+  { name: "Week 2", activity: 19 },
+  { name: "Week 3", activity: 15 },
+  { name: "Week 4", activity: 22 },
+  { name: "Week 5", activity: 18 },
+  { name: "Week 6", activity: 25 },
+  { name: "Week 7", activity: 20 },
+  { name: "Week 8", activity: 28 },
 ];
 
 // Mock data for Progress by Course chart
@@ -21,8 +22,8 @@ const mockProgressByCourseData = [
   { course: "Python", progress: 65 },
   { course: "Data Science", progress: 100 },
   { course: "React", progress: 30 },
-  { course: "Database", progress: 0 },
-  { course: "ML Basics", progress: 45 },
+  { course: "Database", progress: 45 },
+  { course: "ML Basics", progress: 78 },
 ];
 
 interface DashboardStats {
@@ -128,11 +129,15 @@ export function DashboardHome({ userId }: { userId: string }) {
     const weeklyData: { [key: string]: number } = {};
     activities.forEach(activity => {
       const date = new Date(activity.activity_time);
-      const weekKey = `Week ${Math.floor((date.getTime() - new Date().getTime()) / (7 * 24 * 60 * 60 * 1000)) + 4}`;
+      const weekNum = Math.ceil((Date.now() - date.getTime()) / (7 * 24 * 60 * 60 * 1000));
+      const weekKey = `Week ${Math.max(1, 8 - weekNum)}`;
       weeklyData[weekKey] = (weeklyData[weekKey] || 0) + 1;
     });
 
-    return Object.entries(weeklyData).map(([week, count]) => ({ week, count })).slice(-4);
+    return Object.entries(weeklyData)
+      .map(([name, activity]) => ({ name, activity }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .slice(-8);
   };
 
   if (loading) {
@@ -239,8 +244,8 @@ export function DashboardHome({ userId }: { userId: string }) {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={activityData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="day" className="text-xs" />
-                <YAxis className="text-xs" />
+                <XAxis dataKey="name" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--card))', 
@@ -250,10 +255,12 @@ export function DashboardHome({ userId }: { userId: string }) {
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="hours" 
+                  dataKey="activity" 
                   stroke="hsl(var(--primary))" 
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(var(--primary))' }}
+                  strokeWidth={3}
+                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: 'hsl(var(--primary))' }}
+                  connectNulls
                 />
               </LineChart>
             </ResponsiveContainer>
