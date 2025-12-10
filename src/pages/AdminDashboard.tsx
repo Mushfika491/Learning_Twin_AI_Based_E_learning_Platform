@@ -7,6 +7,7 @@ import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { UserManagementTable } from "@/components/admin/UserManagementTable";
 import { ReportsTable } from "@/components/admin/ReportsTable";
 import { SystemSettingsTable } from "@/components/admin/SystemSettingsTable";
+import { AdminProfileTable } from "@/components/admin/AdminProfileTable";
 
 const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -58,6 +59,8 @@ const AdminDashboard = () => {
         return <ReportsTable />;
       case "settings":
         return <SystemSettingsTable />;
+      case "profile":
+        return <AdminProfileTable />;
       default:
         return <AnalyticsDashboard />;
     }
@@ -71,6 +74,8 @@ const AdminDashboard = () => {
         return { title: "Reports", description: "View and manage system reports" };
       case "settings":
         return { title: "System Settings", description: "Configure system settings" };
+      case "profile":
+        return { title: "My Profile", description: "Manage your profile information" };
       default:
         return { title: "Admin Dashboard", description: "Manage users, courses, reports, and view system analytics" };
     }
