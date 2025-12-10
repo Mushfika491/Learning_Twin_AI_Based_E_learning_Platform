@@ -70,19 +70,28 @@ export function InstructorDashboardHome() {
       avgRating,
     });
 
-    // Mock engagement data (in real app, aggregate from activity_logs)
+    // Engagement data with 5 data points
     setEngagementData([
-      { name: "Week 1", students: 30 },
-      { name: "Week 2", students: 45 },
-      { name: "Week 3", students: 60 },
-      { name: "Week 4", students: 55 },
+      { name: "Week 1", students: 32 },
+      { name: "Week 2", students: 48 },
+      { name: "Week 3", students: 65 },
+      { name: "Week 4", students: 58 },
+      { name: "Week 5", students: 72 },
     ]);
 
-    // Performance data per course
-    const perfData = (courses || []).slice(0, 5).map(course => ({
-      course: course.title.substring(0, 15),
-      avg: Math.floor(Math.random() * 30) + 70,
-    }));
+    // Performance data for 5 courses
+    const perfData = courses && courses.length > 0 
+      ? courses.slice(0, 5).map(course => ({
+          course: course.title.substring(0, 15),
+          avg: Math.floor(Math.random() * 30) + 70,
+        }))
+      : [
+          { course: "Python Intro", avg: 85 },
+          { course: "Adv JavaScript", avg: 78 },
+          { course: "Data Science", avg: 92 },
+          { course: "React Dev", avg: 81 },
+          { course: "ML Basics", avg: 76 },
+        ];
     setPerformanceData(perfData);
   };
 

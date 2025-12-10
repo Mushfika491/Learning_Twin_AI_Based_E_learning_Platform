@@ -60,6 +60,31 @@ export function InstructorMyCourses() {
     status: "active",
   });
 
+  // Mock data for demonstration
+  const mockCourses: Course[] = [
+    { id: "c1a2b3c4-d5e6-f7g8-h9i0-j1k2l3m4n5o6", title: "Introduction to Python", description: "Learn Python basics and fundamentals", category: "Programming", difficulty_level: "Beginner", status: "active", created_at: "2025-01-15T10:00:00Z" },
+    { id: "c2b3c4d5-e6f7-g8h9-i0j1-k2l3m4n5o6p7", title: "Advanced JavaScript", description: "Deep dive into ES6+ features and patterns", category: "Programming", difficulty_level: "Advanced", status: "active", created_at: "2025-01-10T09:00:00Z" },
+    { id: "c3c4d5e6-f7g8-h9i0-j1k2-l3m4n5o6p7q8", title: "Data Science Fundamentals", description: "Introduction to data analysis and visualization", category: "Data Science", difficulty_level: "Intermediate", status: "active", created_at: "2025-01-05T14:00:00Z" },
+    { id: "c4d5e6f7-g8h9-i0j1-k2l3-m4n5o6p7q8r9", title: "React Development", description: "Build modern web apps with React", category: "Programming", difficulty_level: "Intermediate", status: "draft", created_at: "2024-12-20T11:00:00Z" },
+    { id: "c5e6f7g8-h9i0-j1k2-l3m4-n5o6p7q8r9s0", title: "Machine Learning Basics", description: "Introduction to ML algorithms and concepts", category: "Data Science", difficulty_level: "Advanced", status: "active", created_at: "2024-12-15T08:00:00Z" },
+  ];
+
+  const mockPrerequisites: Prerequisite[] = [
+    { id: "p1", course_id: "c2b3c4d5-e6f7-g8h9-i0j1-k2l3m4n5o6p7", prerequisite_text: "Introduction to Python", prerequisite_course_id: "c1a2b3c4-d5e6-f7g8-h9i0-j1k2l3m4n5o6" },
+    { id: "p2", course_id: "c3c4d5e6-f7g8-h9i0-j1k2-l3m4n5o6p7q8", prerequisite_text: "Basic Statistics Knowledge", prerequisite_course_id: null },
+    { id: "p3", course_id: "c4d5e6f7-g8h9-i0j1-k2l3-m4n5o6p7q8r9", prerequisite_text: "Advanced JavaScript", prerequisite_course_id: "c2b3c4d5-e6f7-g8h9-i0j1-k2l3m4n5o6p7" },
+    { id: "p4", course_id: "c5e6f7g8-h9i0-j1k2-l3m4-n5o6p7q8r9s0", prerequisite_text: "Data Science Fundamentals", prerequisite_course_id: "c3c4d5e6-f7g8-h9i0-j1k2-l3m4n5o6p7q8" },
+    { id: "p5", course_id: "c5e6f7g8-h9i0-j1k2-l3m4-n5o6p7q8r9s0", prerequisite_text: "Linear Algebra Basics", prerequisite_course_id: null },
+  ];
+
+  const mockRatings: Rating[] = [
+    { id: "r1", student_id: "s1a2b3c4-d5e6-f7g8-h9i0-j1k2l3m4n5o6", course_id: "c1a2b3c4-d5e6-f7g8-h9i0-j1k2l3m4n5o6", rating_score: 5, content: "Excellent course! Very well explained.", created_at: "2025-01-18T15:30:00Z" },
+    { id: "r2", student_id: "s2b3c4d5-e6f7-g8h9-i0j1-k2l3m4n5o6p7", course_id: "c1a2b3c4-d5e6-f7g8-h9i0-j1k2l3m4n5o6", rating_score: 4, content: "Good content, but could use more examples.", created_at: "2025-01-17T10:00:00Z" },
+    { id: "r3", student_id: "s3c4d5e6-f7g8-h9i0-j1k2-l3m4n5o6p7q8", course_id: "c2b3c4d5-e6f7-g8h9-i0j1-k2l3m4n5o6p7", rating_score: 5, content: "Best JavaScript course I've taken!", created_at: "2025-01-16T14:20:00Z" },
+    { id: "r4", student_id: "s4d5e6f7-g8h9-i0j1-k2l3-m4n5o6p7q8r9", course_id: "c3c4d5e6-f7g8-h9i0-j1k2-l3m4n5o6p7q8", rating_score: 4, content: "Great introduction to data science concepts.", created_at: "2025-01-15T09:45:00Z" },
+    { id: "r5", student_id: "s5e6f7g8-h9i0-j1k2-l3m4-n5o6p7q8r9s0", course_id: "c5e6f7g8-h9i0-j1k2-l3m4-n5o6p7q8r9s0", rating_score: 5, content: "Challenging but rewarding course!", created_at: "2025-01-14T16:00:00Z" },
+  ];
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -76,23 +101,28 @@ export function InstructorMyCourses() {
       .eq("instructor_id", session.user.id)
       .order("created_at", { ascending: false });
 
-    setCourses((coursesData as Course[]) || []);
-
-    // Fetch prerequisites
-    const courseIds = (coursesData || []).map(c => c.id);
-    if (courseIds.length > 0) {
+    // Use fetched data or fallback to mock data
+    if (coursesData && coursesData.length > 0) {
+      setCourses(coursesData as Course[]);
+      
+      const courseIds = coursesData.map(c => c.id);
       const { data: prereqData } = await supabase
         .from("course_prerequisites")
         .select("*")
         .in("course_id", courseIds);
-      setPrerequisites((prereqData as Prerequisite[]) || []);
+      setPrerequisites((prereqData as Prerequisite[]) || mockPrerequisites);
 
       const { data: ratingsData } = await supabase
         .from("ratings_reviews")
         .select("*")
         .in("course_id", courseIds)
         .order("created_at", { ascending: false });
-      setRatings((ratingsData as Rating[]) || []);
+      setRatings((ratingsData as Rating[]) || mockRatings);
+    } else {
+      // Use mock data when no real data exists
+      setCourses(mockCourses);
+      setPrerequisites(mockPrerequisites);
+      setRatings(mockRatings);
     }
   };
 

@@ -136,28 +136,51 @@ export function InstructorContentMaterials() {
     topic: "",
   });
 
-  // Mock data for demonstration
+  // Mock data for demonstration (5 rows each)
   const mockQuestions: Question[] = [
-    { id: "q1", assessment_id: "a1", question_number: 1, question_type: "Multiple Choice", category: "Basics", question_text: "What is React?", correct_answer: "A JavaScript library", upload_time: new Date().toISOString() },
-    { id: "q2", assessment_id: "a2", question_number: 2, question_type: "True/False", category: "Advanced", question_text: "React uses virtual DOM", correct_answer: "True", upload_time: new Date().toISOString() },
+    { id: "QST-001", assessment_id: "ASM-001", question_number: 1, question_type: "Multiple Choice", category: "Programming Basics", question_text: "What is the correct syntax to declare a variable in Python?", correct_answer: "variable_name = value", upload_time: "2025-01-15T09:00:00Z" },
+    { id: "QST-002", assessment_id: "ASM-001", question_number: 2, question_type: "True/False", category: "Data Types", question_text: "In Python, strings are mutable.", correct_answer: "False", upload_time: "2025-01-15T09:15:00Z" },
+    { id: "QST-003", assessment_id: "ASM-002", question_number: 1, question_type: "Short Answer", category: "Functions", question_text: "What keyword is used to define a function in JavaScript?", correct_answer: "function", upload_time: "2025-01-16T10:00:00Z" },
+    { id: "QST-004", assessment_id: "ASM-002", question_number: 2, question_type: "Multiple Choice", category: "Arrays", question_text: "Which method adds an element to the end of an array?", correct_answer: "push()", upload_time: "2025-01-16T10:30:00Z" },
+    { id: "QST-005", assessment_id: "ASM-003", question_number: 1, question_type: "Essay", category: "Data Analysis", question_text: "Explain the difference between supervised and unsupervised learning.", correct_answer: "Supervised uses labeled data...", upload_time: "2025-01-17T14:00:00Z" },
   ];
 
   const mockAssignments: Assignment[] = [
-    { id: "as1", title: "React Basics Assignment", assessment_id: "a1", points: 50, due_date_time: "2025-01-15T23:59:00", upload_time: new Date().toISOString(), rubrics: "Code quality, functionality", topic: "Components" },
-    { id: "as2", title: "State Management Project", assessment_id: "a2", points: 100, due_date_time: "2025-01-20T23:59:00", upload_time: new Date().toISOString(), rubrics: "Architecture, implementation", topic: "State" },
+    { id: "ASG-001", title: "Python Variables Practice", assessment_id: "ASM-001", points: 50, due_date_time: "2025-01-25T23:59:00", upload_time: "2025-01-15T08:00:00Z", rubrics: "Correct syntax, variable naming conventions, code readability", topic: "Variables & Data Types" },
+    { id: "ASG-002", title: "JavaScript Functions Project", assessment_id: "ASM-002", points: 100, due_date_time: "2025-01-28T23:59:00", upload_time: "2025-01-16T09:00:00Z", rubrics: "Function implementation, error handling, documentation", topic: "Functions & Methods" },
+    { id: "ASG-003", title: "Data Visualization Report", assessment_id: "ASM-003", points: 75, due_date_time: "2025-02-01T23:59:00", upload_time: "2025-01-17T11:00:00Z", rubrics: "Chart accuracy, insights quality, presentation", topic: "Data Visualization" },
+    { id: "ASG-004", title: "React Component Building", assessment_id: "ASM-004", points: 80, due_date_time: "2025-02-05T23:59:00", upload_time: "2025-01-18T10:00:00Z", rubrics: "Component structure, state management, props usage", topic: "React Components" },
+    { id: "ASG-005", title: "ML Model Training Exercise", assessment_id: "ASM-005", points: 120, due_date_time: "2025-02-10T23:59:00", upload_time: "2025-01-19T13:00:00Z", rubrics: "Model accuracy, feature selection, documentation", topic: "Machine Learning" },
   ];
 
   const mockStudentAnswers: StudentAssessmentAnswer[] = [
-    { id: "sa1", student_name: "John Doe", student_id: "s1", assessment_title: "React Quiz 1", assessment_id: "a1", assessment_type: "Quiz", due_date_time: "2025-01-10T23:59:00", marks: 85, submitted_time: "2025-01-10T22:30:00", answers: "View answers" },
-    { id: "sa2", student_name: "Jane Smith", student_id: "s2", assessment_title: "React Assignment", assessment_id: "a2", assessment_type: "Assignment", due_date_time: "2025-01-15T23:59:00", marks: 92, submitted_time: "2025-01-15T20:15:00", answers: "View answers" },
+    { id: "SAS-001", student_name: "Alice Johnson", student_id: "STU-001", assessment_title: "Python Variables Practice", assessment_id: "ASM-001", assessment_type: "Assignment", due_date_time: "2025-01-25T23:59:00", marks: 45, submitted_time: "2025-01-24T18:30:00", answers: "Completed all exercises correctly" },
+    { id: "SAS-002", student_name: "Bob Williams", student_id: "STU-002", assessment_title: "Python Variables Practice", assessment_id: "ASM-001", assessment_type: "Assignment", due_date_time: "2025-01-25T23:59:00", marks: 48, submitted_time: "2025-01-25T10:15:00", answers: "Excellent variable naming" },
+    { id: "SAS-003", student_name: "Carol Davis", student_id: "STU-003", assessment_title: "JavaScript Functions Project", assessment_id: "ASM-002", assessment_type: "Assignment", due_date_time: "2025-01-28T23:59:00", marks: 92, submitted_time: "2025-01-27T20:45:00", answers: "Outstanding implementation" },
+    { id: "SAS-004", student_name: "David Martinez", student_id: "STU-004", assessment_title: "Data Visualization Report", assessment_id: "ASM-003", assessment_type: "Assignment", due_date_time: "2025-02-01T23:59:00", marks: 68, submitted_time: "2025-01-31T22:00:00", answers: "Good charts, needs more analysis" },
+    { id: "SAS-005", student_name: "Emma Brown", student_id: "STU-005", assessment_title: "React Component Building", assessment_id: "ASM-004", assessment_type: "Assignment", due_date_time: "2025-02-05T23:59:00", marks: 78, submitted_time: "2025-02-04T16:30:00", answers: "Well-structured components" },
+  ];
+
+  // Mock content data
+  const mockContent: Content[] = [
+    { id: "CNT-001", course_id: "c1a2b3c4", type: "Video", title: "Introduction to Python Programming", link: "https://example.com/video1", order_index: 45, created_at: "2025-01-10T08:00:00Z" },
+    { id: "CNT-002", course_id: "c1a2b3c4", type: "Document", title: "Python Syntax Guide", link: "https://example.com/doc1", order_index: 30, created_at: "2025-01-11T09:00:00Z" },
+    { id: "CNT-003", course_id: "c2b3c4d5", type: "Video", title: "JavaScript ES6 Features", link: "https://example.com/video2", order_index: 60, created_at: "2025-01-12T10:00:00Z" },
+    { id: "CNT-004", course_id: "c2b3c4d5", type: "Slides", title: "Async/Await Deep Dive", link: "https://example.com/slides1", order_index: 50, created_at: "2025-01-13T11:00:00Z" },
+    { id: "CNT-005", course_id: "c3c4d5e6", type: "Video", title: "Data Analysis with Pandas", link: "https://example.com/video3", order_index: 75, created_at: "2025-01-14T12:00:00Z" },
+  ];
+
+  // Mock quizzes data
+  const mockQuizzes: Quiz[] = [
+    { quiz_id: "QZ-001", course_id: "c1a2b3c4", title: "Python Basics Quiz", total_marks: 50, difficulty_level: "Beginner", created_at: "2025-01-12T08:00:00Z" },
+    { quiz_id: "QZ-002", course_id: "c1a2b3c4", title: "Python Data Structures Quiz", total_marks: 75, difficulty_level: "Intermediate", created_at: "2025-01-14T09:00:00Z" },
+    { quiz_id: "QZ-003", course_id: "c2b3c4d5", title: "JavaScript Fundamentals", total_marks: 60, difficulty_level: "Beginner", created_at: "2025-01-15T10:00:00Z" },
+    { quiz_id: "QZ-004", course_id: "c2b3c4d5", title: "Advanced JavaScript Patterns", total_marks: 100, difficulty_level: "Advanced", created_at: "2025-01-16T11:00:00Z" },
+    { quiz_id: "QZ-005", course_id: "c3c4d5e6", title: "Data Science Concepts", total_marks: 80, difficulty_level: "Intermediate", created_at: "2025-01-17T12:00:00Z" },
   ];
 
   useEffect(() => {
     fetchData();
-    // Set mock data
-    setQuestions(mockQuestions);
-    setAssignments(mockAssignments);
-    setStudentAnswers(mockStudentAnswers);
   }, []);
 
   const fetchData = async () => {
@@ -178,15 +201,24 @@ export function InstructorContentMaterials() {
         .select("*")
         .in("course_id", courseIds)
         .order("order_index");
-      setContent(contentData || []);
+      setContent(contentData && contentData.length > 0 ? contentData : mockContent);
 
       const { data: quizzesData } = await supabase
         .from("quizzes")
         .select("*")
         .in("course_id", courseIds)
         .order("created_at", { ascending: false });
-      setQuizzes(quizzesData || []);
+      setQuizzes(quizzesData && quizzesData.length > 0 ? quizzesData : mockQuizzes);
+    } else {
+      // Use mock data when no real data exists
+      setContent(mockContent);
+      setQuizzes(mockQuizzes);
     }
+    
+    // Set mock data for questions, assignments, and student answers
+    setQuestions(mockQuestions);
+    setAssignments(mockAssignments);
+    setStudentAnswers(mockStudentAnswers);
   };
 
   const handleContentSubmit = async (e: React.FormEvent) => {
