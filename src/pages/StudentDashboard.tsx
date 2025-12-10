@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, BookOpen, BarChart2, FileText, Award, MessageCircle, FolderOpen, Settings } from "lucide-react";
+import { Home, BookOpen, BarChart2, Award, MessageCircle, FolderOpen, Settings } from "lucide-react";
 import { DashboardHome } from "@/components/student/DashboardHome";
 import { MyCourses } from "@/components/student/MyCourses";
 import { MyProgress } from "@/components/student/MyProgress";
-import { MyQuizzes } from "@/components/student/MyQuizzes";
 import { Certificates } from "@/components/student/Certificates";
 import { Discussions } from "@/components/student/Discussions";
 import { Resources } from "@/components/student/Resources";
@@ -56,7 +55,6 @@ const StudentDashboard = () => {
     { id: "dashboard", label: "Dashboard", icon: Home },
     { id: "courses", label: "My Courses", icon: BookOpen },
     { id: "progress", label: "My Progress", icon: BarChart2 },
-    { id: "quizzes", label: "My Quizzes", icon: FileText },
     { id: "certificates", label: "Certificates", icon: Award },
     { id: "discussions", label: "Discussions", icon: MessageCircle },
     { id: "resources", label: "Resources", icon: FolderOpen },
@@ -79,8 +77,6 @@ const StudentDashboard = () => {
         return <MyCourses userId={user?.id} />;
       case "progress":
         return <MyProgress userId={user?.id} />;
-      case "quizzes":
-        return <MyQuizzes userId={user?.id} />;
       case "certificates":
         return <Certificates userId={user?.id} />;
       case "discussions":
