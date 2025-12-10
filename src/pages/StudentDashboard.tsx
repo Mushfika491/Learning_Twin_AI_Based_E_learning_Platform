@@ -57,7 +57,7 @@ const StudentDashboard = () => {
     { id: "progress", label: "My Progress", icon: BarChart2 },
     { id: "certificates", label: "Certificates", icon: Award },
     { id: "discussions", label: "Discussions", icon: MessageCircle },
-    { id: "resources", label: "Resources", icon: FolderOpen },
+    { id: "resources", label: "Resources & Assessments", icon: FolderOpen },
     { id: "profile", label: "Profile Settings", icon: Settings },
   ];
 
