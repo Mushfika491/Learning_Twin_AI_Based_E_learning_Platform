@@ -22,6 +22,9 @@ const roleMenuItems: Record<string, SidebarItem[]> = {
   ],
   admin: [
     { title: "Dashboard", href: "/admin/dashboard", icon: Home },
+    { title: "User", href: "/admin/dashboard?tab=users", icon: Users },
+    { title: "Reports", href: "/admin/dashboard?tab=reports", icon: FileText },
+    { title: "System Settings", href: "/admin/dashboard?tab=settings", icon: Settings },
   ],
   advisor: [
     { title: "Dashboard", href: "/advisor/dashboard", icon: Home },
