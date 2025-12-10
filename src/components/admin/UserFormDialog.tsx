@@ -29,15 +29,22 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phoneNumber: "",
     role: "student",
     status: "active",
   });
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData({
+        name: initialData.name || "",
+        email: initialData.email || "",
+        phoneNumber: initialData.phoneNumber || "",
+        role: initialData.role || "student",
+        status: initialData.status || "active",
+      });
     } else {
-      setFormData({ name: "", email: "", role: "student", status: "active" });
+      setFormData({ name: "", email: "", phoneNumber: "", role: "student", status: "active" });
     }
   }, [initialData, open]);
 
@@ -52,7 +59,7 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            {initialData ? "Update user information" : "Add a new user to the system"}
+            Update user information
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -76,20 +83,13 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="student">Student</SelectItem>
-                <SelectItem value="instructor">Instructor</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="advisor">Advisor</SelectItem>
-                <SelectItem value="data_scientist">Data Scientist</SelectItem>
-                <SelectItem value="dev_team">Dev Team</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <Input
+              id="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+              placeholder="+1 234 567 890"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
@@ -108,7 +108,7 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
               Cancel
             </Button>
             <Button type="submit">
-              {initialData ? "Update" : "Add"} User
+              Update User
             </Button>
           </div>
         </form>
