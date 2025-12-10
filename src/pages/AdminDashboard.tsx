@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { RoleSidebar } from "@/components/RoleSidebar";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
+import { UserManagementTable } from "@/components/admin/UserManagementTable";
+import { ReportsTable } from "@/components/admin/ReportsTable";
 
 const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const currentTab = searchParams.get("tab") || "dashboard";
 
   const [profile, setProfile] = useState<any>(null);
 
@@ -45,9 +49,42 @@ const AdminDashboard = () => {
     checkAuth();
   }, [navigate]);
 
+  const renderContent = () => {
+    switch (currentTab) {
+      case "users":
+        return <UserManagementTable />;
+      case "reports":
+        return <ReportsTable />;
+      case "settings":
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">System Settings</h3>
+            <p className="text-muted-foreground">System settings configuration coming soon.</p>
+          </div>
+        );
+      default:
+        return <AnalyticsDashboard />;
+    }
+  };
+
+  const getPageTitle = () => {
+    switch (currentTab) {
+      case "users":
+        return { title: "User Management", description: "Manage all platform users" };
+      case "reports":
+        return { title: "Reports", description: "View and manage system reports" };
+      case "settings":
+        return { title: "System Settings", description: "Configure system settings" };
+      default:
+        return { title: "Admin Dashboard", description: "Manage users, courses, reports, and view system analytics" };
+    }
+  };
+
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
+
+  const { title, description } = getPageTitle();
 
   return (
     <div className="min-h-screen bg-background">
@@ -56,11 +93,11 @@ const AdminDashboard = () => {
         <RoleSidebar role="admin" />
         <main className="flex-1 p-8">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage users, courses, reports, and view system analytics</p>
+            <h1 className="text-3xl font-bold mb-2">{title}</h1>
+            <p className="text-muted-foreground">{description}</p>
           </div>
           
-          <AnalyticsDashboard />
+          {renderContent()}
         </main>
       </div>
     </div>
