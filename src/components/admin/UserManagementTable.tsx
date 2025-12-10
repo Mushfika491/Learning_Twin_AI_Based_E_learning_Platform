@@ -2,33 +2,29 @@ import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Trash2, Search, Plus } from "lucide-react";
+import { Pencil, Trash2, Search, Eye } from "lucide-react";
 import { UserFormDialog } from "./UserFormDialog";
+import { UserDetailDialog } from "./UserDetailDialog";
 import { DeleteConfirmDialog } from "../shared/DeleteConfirmDialog";
 
 const mockUsers = [
-  { id: "1", name: "John Doe", email: "john@example.com", role: "student", status: "active" },
-  { id: "2", name: "Jane Smith", email: "jane@example.com", role: "instructor", status: "active" },
-  { id: "3", name: "Bob Johnson", email: "bob@example.com", role: "admin", status: "active" },
-  { id: "4", name: "Alice Williams", email: "alice@example.com", role: "student", status: "inactive" },
+  { id: "USR-001", name: "John Doe", email: "john@example.com", phoneNumber: "+1 234 567 890", role: "student", status: "active", createdAt: "2024-01-15" },
+  { id: "USR-002", name: "Jane Smith", email: "jane@example.com", phoneNumber: "+1 234 567 891", role: "instructor", status: "active", createdAt: "2024-02-20" },
+  { id: "USR-003", name: "Bob Johnson", email: "bob@example.com", phoneNumber: "+1 234 567 892", role: "advisor", status: "active", createdAt: "2024-03-10" },
+  { id: "USR-004", name: "Alice Williams", email: "alice@example.com", phoneNumber: "+1 234 567 893", role: "student", status: "inactive", createdAt: "2024-04-05" },
+  { id: "USR-005", name: "Charlie Brown", email: "charlie@example.com", phoneNumber: "+1 234 567 894", role: "instructor", status: "active", createdAt: "2024-05-12" },
 ];
 
 export function UserManagementTable() {
   const [users, setUsers] = useState(mockUsers);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [deletingUser, setDeletingUser] = useState<any>(null);
+  const [viewingUser, setViewingUser] = useState<any>(null);
 
   const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    user.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const handleAddUser = (userData: any) => {
-    setUsers([...users, { ...userData, id: Date.now().toString() }]);
-    setIsAddDialogOpen(false);
-  };
 
   const handleEditUser = (userData: any) => {
     setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...userData } : u));
@@ -43,36 +39,38 @@ export function UserManagementTable() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <div className="relative flex-1 max-w-sm">
+        <h3 className="text-lg font-semibold">User Information</h3>
+        <div className="relative w-64">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search users..."
+            placeholder="Search by User ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add User
-        </Button>
       </div>
 
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>User ID</TableHead>
               <TableHead>Name</TableHead>
+              <TableHead>Phone Number</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Created At</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredUsers.map((user) => (
               <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.name}</TableCell>
+                <TableCell className="font-medium">{user.id}</TableCell>
+                <TableCell>{user.name}</TableCell>
+                <TableCell>{user.phoneNumber}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell className="capitalize">{user.role}</TableCell>
                 <TableCell>
@@ -82,7 +80,15 @@ export function UserManagementTable() {
                     {user.status}
                   </span>
                 </TableCell>
+                <TableCell>{user.createdAt}</TableCell>
                 <TableCell className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setViewingUser(user)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -105,18 +111,17 @@ export function UserManagementTable() {
       </div>
 
       <UserFormDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        onSubmit={handleAddUser}
-        title="Add New User"
-      />
-
-      <UserFormDialog
         open={!!editingUser}
         onOpenChange={(open) => !open && setEditingUser(null)}
         onSubmit={handleEditUser}
         initialData={editingUser}
         title="Edit User"
+      />
+
+      <UserDetailDialog
+        open={!!viewingUser}
+        onOpenChange={(open) => !open && setViewingUser(null)}
+        user={viewingUser}
       />
 
       <DeleteConfirmDialog
