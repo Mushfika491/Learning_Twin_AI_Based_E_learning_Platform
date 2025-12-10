@@ -30,6 +30,27 @@ interface ContentFile {
   uploadTime: string;
 }
 
+interface Assessment {
+  assessmentId: string;
+  assessmentType: string;
+  assessmentTitle: string;
+  obtainedMark: number;
+  totalMarks: number;
+  dueDateTime: string;
+  performanceLevel: string;
+  feedback: string;
+  status: string;
+}
+
+interface Question {
+  assessmentId: string;
+  questionNumber: number;
+  questionType: string;
+  questionText: string;
+  category: string;
+  correctAnswer: string;
+}
+
 const mockContent: ContentItem[] = [
   { contentId: "CNT – 001", courseId: "CSE – 101", title: "Introduction to Programming", topic: "Variables & Data Types", uploadDate: "2024-01-15" },
   { contentId: "CNT – 002", courseId: "CSE – 102", title: "Data Structures Basics", topic: "Arrays & Linked Lists", uploadDate: "2024-01-18" },
@@ -54,11 +75,29 @@ const mockContentFiles: ContentFile[] = [
   { contentId: "CNT – 005", contentType: "Code", fileName: "html_examples.zip", fileType: "ZIP", fileSize: "3.1 MB", fileLocation: "/code/cse104/", uploadTime: "2024-01-25 10:20" },
 ];
 
+const mockAssessments: Assessment[] = [
+  { assessmentId: "ASM – 001", assessmentType: "Quiz", assessmentTitle: "Programming Basics Quiz", obtainedMark: 85, totalMarks: 100, dueDateTime: "2024-02-10 23:59", performanceLevel: "Excellent", feedback: "Great understanding of core concepts", status: "Graded" },
+  { assessmentId: "ASM – 002", assessmentType: "Assignment", assessmentTitle: "Data Structures Assignment 1", obtainedMark: 72, totalMarks: 80, dueDateTime: "2024-02-15 23:59", performanceLevel: "Good", feedback: "Well structured code, minor improvements needed", status: "Graded" },
+  { assessmentId: "ASM – 003", assessmentType: "Quiz", assessmentTitle: "SQL Fundamentals Quiz", obtainedMark: 0, totalMarks: 50, dueDateTime: "2024-02-20 23:59", performanceLevel: "Pending", feedback: "Not yet submitted", status: "Not Submitted" },
+  { assessmentId: "ASM – 004", assessmentType: "Assignment", assessmentTitle: "Web Development Project", obtainedMark: 45, totalMarks: 50, dueDateTime: "2024-02-25 23:59", performanceLevel: "Excellent", feedback: "Outstanding work with responsive design", status: "Graded" },
+  { assessmentId: "ASM – 005", assessmentType: "Quiz", assessmentTitle: "Algorithm Analysis Quiz", obtainedMark: 0, totalMarks: 100, dueDateTime: "2024-03-01 23:59", performanceLevel: "Pending", feedback: "Awaiting grading", status: "Submitted" },
+];
+
+const mockQuestions: Question[] = [
+  { assessmentId: "ASM – 001", questionNumber: 1, questionType: "MCQ", questionText: "What is a variable in programming?", category: "Basics", correctAnswer: "A named storage location in memory" },
+  { assessmentId: "ASM – 001", questionNumber: 2, questionType: "Short Q", questionText: "Explain the difference between int and float data types", category: "Data Types", correctAnswer: "Int stores whole numbers, float stores decimal numbers" },
+  { assessmentId: "ASM – 002", questionNumber: 1, questionType: "MCQ", questionText: "Which data structure uses LIFO principle?", category: "Data Structures", correctAnswer: "Stack" },
+  { assessmentId: "ASM – 003", questionNumber: 1, questionType: "Short Q", questionText: "Write a SQL query to select all records from a table", category: "SQL Basics", correctAnswer: "SELECT * FROM table_name" },
+  { assessmentId: "ASM – 004", questionNumber: 1, questionType: "MCQ", questionText: "What does HTML stand for?", category: "Web Basics", correctAnswer: "HyperText Markup Language" },
+];
+
 export function Resources({ userId }: { userId: string }) {
   const [activeTab, setActiveTab] = useState("course-materials");
   const [contentSearch, setContentSearch] = useState("");
   const [materialsSearch, setMaterialsSearch] = useState("");
   const [filesSearch, setFilesSearch] = useState("");
+  const [assessmentSearch, setAssessmentSearch] = useState("");
+  const [questionSearch, setQuestionSearch] = useState("");
 
   const filteredContent = mockContent.filter(item =>
     item.courseId.toLowerCase().includes(contentSearch.toLowerCase())
@@ -70,6 +109,14 @@ export function Resources({ userId }: { userId: string }) {
 
   const filteredFiles = mockContentFiles.filter(item =>
     item.contentId.toLowerCase().includes(filesSearch.toLowerCase())
+  );
+
+  const filteredAssessments = mockAssessments.filter(item =>
+    item.assessmentId.toLowerCase().includes(assessmentSearch.toLowerCase())
+  );
+
+  const filteredQuestions = mockQuestions.filter(item =>
+    item.assessmentId.toLowerCase().includes(questionSearch.toLowerCase())
   );
 
   return (
@@ -230,14 +277,114 @@ export function Resources({ userId }: { userId: string }) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="my-assessments" className="mt-6">
+        <TabsContent value="my-assessments" className="space-y-6 mt-6">
+          {/* Assessment Table */}
           <Card>
             <CardHeader>
-              <CardTitle>My Assessments</CardTitle>
-              <CardDescription>Your quizzes and assignments</CardDescription>
+              <CardTitle>Assessment</CardTitle>
+              <CardDescription>Your quizzes and assignments with grades</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Assessment content coming soon...</p>
+              <div className="flex gap-4 mb-4">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by Assessment ID..."
+                    value={assessmentSearch}
+                    onChange={(e) => setAssessmentSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Assessment ID</TableHead>
+                      <TableHead>Assessment Type (Assignment/Quiz)</TableHead>
+                      <TableHead>Assessment Title</TableHead>
+                      <TableHead>Obtained Mark</TableHead>
+                      <TableHead>Total Marks</TableHead>
+                      <TableHead>Due Date & Time</TableHead>
+                      <TableHead>Performance Level</TableHead>
+                      <TableHead>Feedback (Text)</TableHead>
+                      <TableHead>Status (Submitted/Not Submitted/Graded)</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAssessments.map((item) => (
+                      <TableRow key={item.assessmentId}>
+                        <TableCell className="font-medium">{item.assessmentId}</TableCell>
+                        <TableCell>{item.assessmentType}</TableCell>
+                        <TableCell>{item.assessmentTitle}</TableCell>
+                        <TableCell>{item.obtainedMark}</TableCell>
+                        <TableCell>{item.totalMarks}</TableCell>
+                        <TableCell>{item.dueDateTime}</TableCell>
+                        <TableCell>{item.performanceLevel}</TableCell>
+                        <TableCell className="max-w-xs truncate">{item.feedback}</TableCell>
+                        <TableCell>{item.status}</TableCell>
+                        <TableCell>
+                          <Button size="sm" variant="ghost">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Question Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Question</CardTitle>
+              <CardDescription>Assessment questions and answers</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 mb-4">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by Question ID..."
+                    value={questionSearch}
+                    onChange={(e) => setQuestionSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Assessment ID</TableHead>
+                    <TableHead>Question Number</TableHead>
+                    <TableHead>Question Type (Short Q/MCQ)</TableHead>
+                    <TableHead>Question Text</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Correct Answer</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredQuestions.map((item, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{item.assessmentId}</TableCell>
+                      <TableCell>{item.questionNumber}</TableCell>
+                      <TableCell>{item.questionType}</TableCell>
+                      <TableCell className="max-w-xs truncate">{item.questionText}</TableCell>
+                      <TableCell>{item.category}</TableCell>
+                      <TableCell className="max-w-xs truncate">{item.correctAnswer}</TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="ghost">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
