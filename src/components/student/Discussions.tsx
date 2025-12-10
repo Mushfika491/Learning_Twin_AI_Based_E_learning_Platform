@@ -29,8 +29,30 @@ interface Course {
   title: string;
 }
 
+// Mock data for discussions
+const mockDiscussions: Discussion[] = [
+  {
+    discussion_id: "DIS – 001",
+    title: "How to implement recursion in Python?",
+    body: "I'm having trouble understanding recursion concepts. Can someone explain with a simple example? I've tried the factorial function but I'm getting confused about the base case and how the stack works.",
+    created_at: "2024-03-15T10:30:00Z",
+    created_by_user_id: "user-001",
+    courses: { title: "Introduction to Python" },
+    profiles: { name: "John Smith" }
+  },
+  {
+    discussion_id: "DIS – 002",
+    title: "Best practices for data visualization",
+    body: "What are the recommended libraries and techniques for creating effective data visualizations? I'm working on a project that requires presenting complex datasets in an understandable way.",
+    created_at: "2024-03-18T14:15:00Z",
+    created_by_user_id: "user-002",
+    courses: { title: "Data Science Fundamentals" },
+    profiles: { name: "Emily Johnson" }
+  }
+];
+
 export function Discussions({ userId }: { userId: string }) {
-  const [discussions, setDiscussions] = useState<Discussion[]>([]);
+  const [discussions, setDiscussions] = useState<Discussion[]>(mockDiscussions);
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDiscussion, setSelectedDiscussion] = useState<Discussion | null>(null);
