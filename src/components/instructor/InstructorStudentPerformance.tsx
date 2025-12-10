@@ -66,7 +66,48 @@ export function InstructorStudentPerformance() {
   const [enrollmentSearchTerm, setEnrollmentSearchTerm] = useState("");
   const [reportSearchTerm, setReportSearchTerm] = useState("");
   
-  // Mock performance reports (UI-only for now)
+  // Mock data for demonstration (5 rows each)
+  const mockProfiles: Profile[] = [
+    { id: "STU-001-uuid", name: "Alice Johnson", email: "alice.johnson@email.com", phone_number: "+1-555-0101", learning_goals: "Master Python programming", interests: "AI, Data Science", achievements: "Dean's List 2024" },
+    { id: "STU-002-uuid", name: "Bob Williams", email: "bob.williams@email.com", phone_number: "+1-555-0102", learning_goals: "Become a full-stack developer", interests: "Web Development, React", achievements: "Hackathon Winner 2024" },
+    { id: "STU-003-uuid", name: "Carol Davis", email: "carol.davis@email.com", phone_number: "+1-555-0103", learning_goals: "Data Science certification", interests: "Machine Learning, Statistics", achievements: "Research Publication" },
+    { id: "STU-004-uuid", name: "David Martinez", email: "david.martinez@email.com", phone_number: "+1-555-0104", learning_goals: "Build mobile applications", interests: "React Native, Flutter", achievements: "App Store Featured" },
+    { id: "STU-005-uuid", name: "Emma Brown", email: "emma.brown@email.com", phone_number: "+1-555-0105", learning_goals: "Learn cloud computing", interests: "AWS, DevOps", achievements: "AWS Certified" },
+  ];
+
+  const mockEnrollments: Enrollment[] = [
+    { id: "ENR-001", user_id: "STU-001-uuid", course_id: "CRS-001-uuid", progress: 85, enrolled_at: "2025-01-05T10:00:00Z", status: "active" },
+    { id: "ENR-002", user_id: "STU-002-uuid", course_id: "CRS-001-uuid", progress: 72, enrolled_at: "2025-01-06T11:00:00Z", status: "active" },
+    { id: "ENR-003", user_id: "STU-003-uuid", course_id: "CRS-002-uuid", progress: 100, enrolled_at: "2025-01-07T09:00:00Z", status: "completed" },
+    { id: "ENR-004", user_id: "STU-004-uuid", course_id: "CRS-002-uuid", progress: 45, enrolled_at: "2025-01-08T14:00:00Z", status: "active" },
+    { id: "ENR-005", user_id: "STU-005-uuid", course_id: "CRS-003-uuid", progress: 60, enrolled_at: "2025-01-09T08:00:00Z", status: "active" },
+  ];
+
+  const mockProgress: Progress[] = [
+    { progress_id: "PRG-001", student_id: "STU-001-uuid", course_id: "CRS-001-uuid", percentage_completed: 85, time_spent_minutes: 1250, last_accessed: "2025-01-20T15:30:00Z" },
+    { progress_id: "PRG-002", student_id: "STU-002-uuid", course_id: "CRS-001-uuid", percentage_completed: 72, time_spent_minutes: 980, last_accessed: "2025-01-19T10:00:00Z" },
+    { progress_id: "PRG-003", student_id: "STU-003-uuid", course_id: "CRS-002-uuid", percentage_completed: 100, time_spent_minutes: 2100, last_accessed: "2025-01-18T18:00:00Z" },
+    { progress_id: "PRG-004", student_id: "STU-004-uuid", course_id: "CRS-002-uuid", percentage_completed: 45, time_spent_minutes: 560, last_accessed: "2025-01-20T09:00:00Z" },
+    { progress_id: "PRG-005", student_id: "STU-005-uuid", course_id: "CRS-003-uuid", percentage_completed: 60, time_spent_minutes: 720, last_accessed: "2025-01-20T12:00:00Z" },
+  ];
+
+  const mockPerformanceReports: PerformanceReport[] = [
+    { id: "RPT-001", student_id: "STU-001-uuid", course_id: "CRS-001-uuid", strengths: "Excellent problem-solving skills, consistent participation", weakness: "Time management on quizzes", recommendations: "Practice timed exercises, review quiz strategies", generated_at: "2025-01-20T10:00:00Z", risk_level: "Low" },
+    { id: "RPT-002", student_id: "STU-002-uuid", course_id: "CRS-001-uuid", strengths: "Strong coding fundamentals, creative solutions", weakness: "Documentation needs improvement", recommendations: "Focus on code comments and README files", generated_at: "2025-01-19T14:00:00Z", risk_level: "Low" },
+    { id: "RPT-003", student_id: "STU-003-uuid", course_id: "CRS-002-uuid", strengths: "Outstanding performance, ahead of schedule", weakness: "None identified", recommendations: "Consider advanced courses", generated_at: "2025-01-18T11:00:00Z", risk_level: "Low" },
+    { id: "RPT-004", student_id: "STU-004-uuid", course_id: "CRS-002-uuid", strengths: "Good theoretical understanding", weakness: "Practical implementation needs work", recommendations: "Complete more hands-on projects", generated_at: "2025-01-20T08:00:00Z", risk_level: "Medium" },
+    { id: "RPT-005", student_id: "STU-005-uuid", course_id: "CRS-003-uuid", strengths: "Quick learner, asks good questions", weakness: "Assignment submission delays", recommendations: "Set earlier personal deadlines", generated_at: "2025-01-19T16:00:00Z", risk_level: "Medium" },
+  ];
+
+  const mockCourses: Course[] = [
+    { id: "CRS-001-uuid", title: "Introduction to Python" },
+    { id: "CRS-002-uuid", title: "Advanced JavaScript" },
+    { id: "CRS-003-uuid", title: "Data Science Fundamentals" },
+    { id: "CRS-004-uuid", title: "React Development" },
+    { id: "CRS-005-uuid", title: "Machine Learning Basics" },
+  ];
+
+  // State for performance reports
   const [performanceReports, setPerformanceReports] = useState<PerformanceReport[]>([]);
 
   useEffect(() => {
@@ -83,16 +124,17 @@ export function InstructorStudentPerformance() {
       .select("id, title")
       .eq("instructor_id", session.user.id);
 
-    setCourses(coursesData || []);
+    // Use fetched data or fallback to mock data
+    if (coursesData && coursesData.length > 0) {
+      setCourses(coursesData);
 
-    const courseIds = (coursesData || []).map(c => c.id);
-    if (courseIds.length > 0) {
+      const courseIds = coursesData.map(c => c.id);
       // Get enrollments
       const { data: enrollmentsData } = await supabase
         .from("enrollments")
         .select("*")
         .in("course_id", courseIds);
-      setEnrollments(enrollmentsData || []);
+      setEnrollments(enrollmentsData && enrollmentsData.length > 0 ? enrollmentsData : mockEnrollments);
 
       // Get student profiles with additional fields
       const studentIds = [...new Set((enrollmentsData || []).map(e => e.user_id))];
@@ -101,7 +143,9 @@ export function InstructorStudentPerformance() {
           .from("profiles")
           .select("id, name, email, phone_number, learning_goals, interests, achievements")
           .in("id", studentIds);
-        setProfiles(profilesData || []);
+        setProfiles(profilesData && profilesData.length > 0 ? profilesData : mockProfiles);
+      } else {
+        setProfiles(mockProfiles);
       }
 
       // Get progress data
@@ -109,8 +153,17 @@ export function InstructorStudentPerformance() {
         .from("progress")
         .select("*")
         .in("course_id", courseIds);
-      setProgress(progressData || []);
+      setProgress(progressData && progressData.length > 0 ? progressData : mockProgress);
+    } else {
+      // Use mock data when no real data exists
+      setCourses(mockCourses);
+      setEnrollments(mockEnrollments);
+      setProfiles(mockProfiles);
+      setProgress(mockProgress);
     }
+    
+    // Set mock performance reports
+    setPerformanceReports(mockPerformanceReports);
   };
 
   const getStudentName = (studentId: string) => {
