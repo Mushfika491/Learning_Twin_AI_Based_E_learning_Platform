@@ -5,6 +5,26 @@ import { BookOpen, Award, TrendingUp, GraduationCap, Bell, FileUp } from "lucide
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Badge } from "@/components/ui/badge";
 
+// Mock data for Learning Activity chart
+const mockLearningActivityData = [
+  { day: "Mon", hours: 2.5 },
+  { day: "Tue", hours: 3.2 },
+  { day: "Wed", hours: 1.8 },
+  { day: "Thu", hours: 4.0 },
+  { day: "Fri", hours: 2.1 },
+  { day: "Sat", hours: 3.5 },
+  { day: "Sun", hours: 1.2 },
+];
+
+// Mock data for Progress by Course chart
+const mockProgressByCourseData = [
+  { course: "Python", progress: 65 },
+  { course: "Data Science", progress: 100 },
+  { course: "React", progress: 30 },
+  { course: "Database", progress: 0 },
+  { course: "ML Basics", progress: 45 },
+];
+
 interface DashboardStats {
   totalEnrolled: number;
   completedCourses: number;
@@ -14,13 +34,13 @@ interface DashboardStats {
 
 export function DashboardHome({ userId }: { userId: string }) {
   const [stats, setStats] = useState<DashboardStats>({
-    totalEnrolled: 0,
-    completedCourses: 0,
-    averageProgress: 0,
-    certificatesEarned: 0,
+    totalEnrolled: 5,
+    completedCourses: 2,
+    averageProgress: 48,
+    certificatesEarned: 2,
   });
-  const [activityData, setActivityData] = useState<any[]>([]);
-  const [progressData, setProgressData] = useState<any[]>([]);
+  const [activityData, setActivityData] = useState<any[]>(mockLearningActivityData);
+  const [progressData, setProgressData] = useState<any[]>(mockProgressByCourseData);
   const [newContent, setNewContent] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -213,15 +233,28 @@ export function DashboardHome({ userId }: { userId: string }) {
         <Card>
           <CardHeader>
             <CardTitle>Learning Activity</CardTitle>
+            <CardDescription>Hours spent learning this week</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={activityData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="week" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="hsl(var(--primary))" strokeWidth={2} />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="day" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }} 
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="hours" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={2}
+                  dot={{ fill: 'hsl(var(--primary))' }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -230,15 +263,26 @@ export function DashboardHome({ userId }: { userId: string }) {
         <Card>
           <CardHeader>
             <CardTitle>Progress by Course</CardTitle>
+            <CardDescription>Completion percentage for each course</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={progressData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="course" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="progress" fill="hsl(var(--primary))" />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="course" className="text-xs" />
+                <YAxis className="text-xs" domain={[0, 100]} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }} 
+                />
+                <Bar 
+                  dataKey="progress" 
+                  fill="hsl(var(--primary))" 
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
