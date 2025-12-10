@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Search, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 interface ContentItem {
   contentId: string;
@@ -98,6 +100,38 @@ export function Resources({ userId }: { userId: string }) {
   const [filesSearch, setFilesSearch] = useState("");
   const [assessmentSearch, setAssessmentSearch] = useState("");
   const [questionSearch, setQuestionSearch] = useState("");
+  const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false);
+  const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
+
+  const handleViewAssessment = (assessment: Assessment) => {
+    setSelectedAssessment(assessment);
+    setAssessmentDialogOpen(true);
+  };
+
+  const handleViewQuestion = (question: Question) => {
+    setSelectedQuestion(question);
+    setQuestionDialogOpen(true);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Graded": return "bg-green-500/20 text-green-700 border-green-500/30";
+      case "Submitted": return "bg-blue-500/20 text-blue-700 border-blue-500/30";
+      case "Not Submitted": return "bg-red-500/20 text-red-700 border-red-500/30";
+      default: return "bg-muted text-muted-foreground";
+    }
+  };
+
+  const getPerformanceColor = (level: string) => {
+    switch (level) {
+      case "Excellent": return "bg-green-500/20 text-green-700 border-green-500/30";
+      case "Good": return "bg-blue-500/20 text-blue-700 border-blue-500/30";
+      case "Pending": return "bg-yellow-500/20 text-yellow-700 border-yellow-500/30";
+      default: return "bg-muted text-muted-foreground";
+    }
+  };
 
   const filteredContent = mockContent.filter(item =>
     item.courseId.toLowerCase().includes(contentSearch.toLowerCase())
@@ -325,7 +359,7 @@ export function Resources({ userId }: { userId: string }) {
                         <TableCell className="max-w-xs truncate">{item.feedback}</TableCell>
                         <TableCell>{item.status}</TableCell>
                         <TableCell>
-                          <Button size="sm" variant="ghost">
+                          <Button size="sm" variant="ghost" onClick={() => handleViewAssessment(item)}>
                             <Eye className="h-4 w-4" />
                           </Button>
                         </TableCell>
@@ -377,7 +411,7 @@ export function Resources({ userId }: { userId: string }) {
                       <TableCell>{item.category}</TableCell>
                       <TableCell className="max-w-xs truncate">{item.correctAnswer}</TableCell>
                       <TableCell>
-                        <Button size="sm" variant="ghost">
+                        <Button size="sm" variant="ghost" onClick={() => handleViewQuestion(item)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -401,6 +435,98 @@ export function Resources({ userId }: { userId: string }) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Assessment Detail Dialog */}
+      <Dialog open={assessmentDialogOpen} onOpenChange={setAssessmentDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Assessment Details</DialogTitle>
+            <DialogDescription>Full summary of assessment {selectedAssessment?.assessmentId}</DialogDescription>
+          </DialogHeader>
+          {selectedAssessment && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Assessment ID</p>
+                  <p className="font-medium">{selectedAssessment.assessmentId}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Assessment Type</p>
+                  <p className="font-medium">{selectedAssessment.assessmentType}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Assessment Title</p>
+                  <p className="font-medium">{selectedAssessment.assessmentTitle}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Obtained Mark</p>
+                  <p className="font-medium">{selectedAssessment.obtainedMark} / {selectedAssessment.totalMarks}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Due Date & Time</p>
+                  <p className="font-medium">{selectedAssessment.dueDateTime}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Performance Level</p>
+                  <Badge className={getPerformanceColor(selectedAssessment.performanceLevel)}>
+                    {selectedAssessment.performanceLevel}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge className={getStatusColor(selectedAssessment.status)}>
+                    {selectedAssessment.status}
+                  </Badge>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Feedback</p>
+                  <p className="font-medium bg-muted p-3 rounded-md">{selectedAssessment.feedback}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Question Detail Dialog */}
+      <Dialog open={questionDialogOpen} onOpenChange={setQuestionDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Question Details</DialogTitle>
+            <DialogDescription>Full summary of question from {selectedQuestion?.assessmentId}</DialogDescription>
+          </DialogHeader>
+          {selectedQuestion && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Assessment ID</p>
+                  <p className="font-medium">{selectedQuestion.assessmentId}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Question Number</p>
+                  <p className="font-medium">{selectedQuestion.questionNumber}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Question Type</p>
+                  <Badge variant="outline">{selectedQuestion.questionType}</Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Category</p>
+                  <p className="font-medium">{selectedQuestion.category}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Question Text</p>
+                  <p className="font-medium bg-muted p-3 rounded-md">{selectedQuestion.questionText}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Correct Answer</p>
+                  <p className="font-medium bg-green-500/10 p-3 rounded-md border border-green-500/20">{selectedQuestion.correctAnswer}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
