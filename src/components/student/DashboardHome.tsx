@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { BookOpen, Award, TrendingUp, GraduationCap } from "lucide-react";
+import { BookOpen, Award, TrendingUp, GraduationCap, Bell, FileUp } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Badge } from "@/components/ui/badge";
 
 interface DashboardStats {
   totalEnrolled: number;
@@ -20,6 +21,7 @@ export function DashboardHome({ userId }: { userId: string }) {
   });
   const [activityData, setActivityData] = useState<any[]>([]);
   const [progressData, setProgressData] = useState<any[]>([]);
+  const [newContent, setNewContent] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,6 +55,24 @@ export function DashboardHome({ userId }: { userId: string }) {
         .eq("user_id", userId)
         .order("activity_time", { ascending: true })
         .limit(30);
+
+      // Fetch new content for enrolled courses (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const enrolledCourseIds = enrollments?.map(e => e.course_id) || [];
+      
+      if (enrolledCourseIds.length > 0) {
+        const { data: recentContent } = await supabase
+          .from("content")
+          .select("*, courses(title)")
+          .in("course_id", enrolledCourseIds)
+          .gte("created_at", sevenDaysAgo.toISOString())
+          .order("created_at", { ascending: false })
+          .limit(5);
+        
+        setNewContent(recentContent || []);
+      }
 
       const totalEnrolled = enrollments?.length || 0;
       const completedCourses = enrollments?.filter(e => e.status === "completed").length || 0;
@@ -151,6 +171,42 @@ export function DashboardHome({ userId }: { userId: string }) {
           </CardContent>
         </Card>
       </div>
+
+      {/* New Content Uploaded Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-primary" />
+            <CardTitle>New Content Uploaded</CardTitle>
+          </div>
+          <CardDescription>Recent materials added to your enrolled courses</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {newContent.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No new content in the last 7 days.</p>
+          ) : (
+            <div className="space-y-3">
+              {newContent.map((content: any) => (
+                <div key={content.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <FileUp className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium text-sm">{content.title}</p>
+                      <p className="text-xs text-muted-foreground">{content.courses?.title}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{content.type}</Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(content.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Charts */}
       <div className="grid lg:grid-cols-2 gap-6">

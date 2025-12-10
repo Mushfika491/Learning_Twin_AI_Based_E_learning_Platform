@@ -11,12 +11,12 @@ import { Certificates } from "@/components/student/Certificates";
 import { Discussions } from "@/components/student/Discussions";
 import { Resources } from "@/components/student/Resources";
 import { ProfileSettings } from "@/components/student/ProfileSettings";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 const StudentDashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeSection, setActiveSection] = useState("dashboard");
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -52,7 +52,7 @@ const StudentDashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const tabs = [
+  const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: Home },
     { id: "courses", label: "My Courses", icon: BookOpen },
     { id: "progress", label: "My Progress", icon: BarChart2 },
@@ -71,62 +71,71 @@ const StudentDashboard = () => {
     );
   }
 
+  const renderContent = () => {
+    switch (activeSection) {
+      case "dashboard":
+        return <DashboardHome userId={user?.id} />;
+      case "courses":
+        return <MyCourses userId={user?.id} />;
+      case "progress":
+        return <MyProgress userId={user?.id} />;
+      case "quizzes":
+        return <MyQuizzes userId={user?.id} />;
+      case "certificates":
+        return <Certificates userId={user?.id} />;
+      case "discussions":
+        return <Discussions userId={user?.id} />;
+      case "resources":
+        return <Resources userId={user?.id} />;
+      case "profile":
+        return <ProfileSettings userId={user?.id} />;
+      default:
+        return <DashboardHome userId={user?.id} />;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar user={profile ? { name: profile.name, email: profile.email, avatar: profile.avatar } : undefined} />
       
-      <div className="container py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">
-            Welcome back, {profile?.name || "Student"}!
-          </h1>
-          <p className="text-muted-foreground">
-            Continue your learning journey and track your progress
-          </p>
-        </div>
+      <div className="flex">
+        {/* Left Sidebar */}
+        <aside className="w-64 min-h-[calc(100vh-4rem)] border-r bg-card">
+          <div className="p-4">
+            <h2 className="text-lg font-semibold mb-4">Student Portal</h2>
+            <nav className="space-y-1">
+              {menuItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    activeSection === item.id
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </aside>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-4 lg:grid-cols-8 w-full">
-            {tabs.map(tab => (
-              <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
-                <tab.icon className="h-4 w-4" />
-                <span className="hidden lg:inline">{tab.label}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        {/* Main Content */}
+        <main className="flex-1 p-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">
+              Welcome back, {profile?.name || "Student"}!
+            </h1>
+            <p className="text-muted-foreground">
+              Continue your learning journey and track your progress
+            </p>
+          </div>
 
-          <TabsContent value="dashboard">
-            <DashboardHome userId={user?.id} />
-          </TabsContent>
-
-          <TabsContent value="courses">
-            <MyCourses userId={user?.id} />
-          </TabsContent>
-
-          <TabsContent value="progress">
-            <MyProgress userId={user?.id} />
-          </TabsContent>
-
-          <TabsContent value="quizzes">
-            <MyQuizzes userId={user?.id} />
-          </TabsContent>
-
-          <TabsContent value="certificates">
-            <Certificates userId={user?.id} />
-          </TabsContent>
-
-          <TabsContent value="discussions">
-            <Discussions userId={user?.id} />
-          </TabsContent>
-
-          <TabsContent value="resources">
-            <Resources userId={user?.id} />
-          </TabsContent>
-
-          <TabsContent value="profile">
-            <ProfileSettings userId={user?.id} />
-          </TabsContent>
-        </Tabs>
+          {renderContent()}
+        </main>
       </div>
     </div>
   );
