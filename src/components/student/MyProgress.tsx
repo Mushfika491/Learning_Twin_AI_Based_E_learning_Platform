@@ -1,51 +1,82 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { Search, RefreshCw } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Search, Eye, RefreshCw } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
-interface ProgressItem {
-  progress_id: string;
-  percentage_completed: number;
-  time_spent_minutes: number;
-  last_accessed: string;
-  courses: {
-    title: string;
-  };
+interface PerformanceReport {
+  courseId: string;
+  perfReportId: string;
+  strengths: string;
+  weakness: string;
+  recommendations: string;
+  generatedAt: string;
 }
 
+// Mock data for Performance table
+const mockPerformance: PerformanceReport[] = [
+  {
+    courseId: "CSE – 101",
+    perfReportId: "PERF – 001",
+    strengths: "Strong problem-solving skills, excellent code structure",
+    weakness: "Time management during assignments",
+    recommendations: "Practice timed coding exercises",
+    generatedAt: "2024-01-15",
+  },
+  {
+    courseId: "CSE – 102",
+    perfReportId: "PERF – 002",
+    strengths: "Good understanding of data structures",
+    weakness: "Algorithm optimization techniques",
+    recommendations: "Focus on Big-O notation and optimization",
+    generatedAt: "2024-02-20",
+  },
+  {
+    courseId: "CSE – 103",
+    perfReportId: "PERF – 003",
+    strengths: "Creative UI designs, attention to detail",
+    weakness: "Responsive design implementation",
+    recommendations: "Study CSS flexbox and grid layouts",
+    generatedAt: "2024-03-10",
+  },
+  {
+    courseId: "CSE – 104",
+    perfReportId: "PERF – 004",
+    strengths: "Database normalization knowledge",
+    weakness: "Complex query optimization",
+    recommendations: "Practice advanced SQL queries",
+    generatedAt: "2024-03-25",
+  },
+  {
+    courseId: "CSE – 105",
+    perfReportId: "PERF – 005",
+    strengths: "Understanding of ML concepts",
+    weakness: "Model tuning and hyperparameters",
+    recommendations: "Experiment with different model configurations",
+    generatedAt: "2024-04-01",
+  },
+];
+
 export function MyProgress({ userId }: { userId: string }) {
-  const [progressItems, setProgressItems] = useState<ProgressItem[]>([]);
+  const [performanceData, setPerformanceData] = useState<PerformanceReport[]>(mockPerformance);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetchProgress();
-  }, [userId]);
+  const [viewingReport, setViewingReport] = useState<PerformanceReport | null>(null);
 
   const fetchProgress = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("progress")
-      .select("*, courses(title)")
-      .eq("student_id", userId);
-
-    setProgressItems(data || []);
-    setLoading(false);
+    // Simulate API call
+    setTimeout(() => {
+      setLoading(false);
+    }, 500);
   };
 
-  const filteredProgress = progressItems.filter(p =>
-    p.courses.title.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPerformance = performanceData.filter(p =>
+    p.courseId.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const chartData = filteredProgress.slice(0, 10).map(p => ({
-    course: p.courses.title.substring(0, 20),
-    progress: p.percentage_completed,
-  }));
 
   return (
     <div className="space-y-6">
@@ -53,8 +84,8 @@ export function MyProgress({ userId }: { userId: string }) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>My Progress</CardTitle>
-              <CardDescription>Track your learning progress across courses</CardDescription>
+              <CardTitle>Performance</CardTitle>
+              <CardDescription>Track your learning performance across courses</CardDescription>
             </div>
             <Button onClick={fetchProgress} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -66,7 +97,7 @@ export function MyProgress({ userId }: { userId: string }) {
           <div className="relative mb-4">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search courses..."
+              placeholder="Search by Course ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
@@ -76,45 +107,76 @@ export function MyProgress({ userId }: { userId: string }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Course</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead>Time Spent</TableHead>
-                <TableHead>Last Accessed</TableHead>
+                <TableHead>Course ID</TableHead>
+                <TableHead>Perf Report ID</TableHead>
+                <TableHead>Strengths</TableHead>
+                <TableHead>Weakness</TableHead>
+                <TableHead>Recommendations</TableHead>
+                <TableHead>Generated At</TableHead>
+                <TableHead>Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProgress.map(item => (
-                <TableRow key={item.progress_id}>
-                  <TableCell className="font-medium">{item.courses.title}</TableCell>
+              {filteredPerformance.map(item => (
+                <TableRow key={item.perfReportId}>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Progress value={item.percentage_completed} className="flex-1" />
-                      <span className="text-sm font-medium">{item.percentage_completed}%</span>
-                    </div>
+                    <Badge variant="outline">{item.courseId}</Badge>
                   </TableCell>
-                  <TableCell>{Math.floor(item.time_spent_minutes / 60)}h {item.time_spent_minutes % 60}m</TableCell>
-                  <TableCell>{new Date(item.last_accessed).toLocaleDateString()}</TableCell>
+                  <TableCell className="font-mono text-xs">{item.perfReportId}</TableCell>
+                  <TableCell className="max-w-[150px] truncate" title={item.strengths}>
+                    {item.strengths}
+                  </TableCell>
+                  <TableCell className="max-w-[150px] truncate" title={item.weakness}>
+                    {item.weakness}
+                  </TableCell>
+                  <TableCell className="max-w-[150px] truncate" title={item.recommendations}>
+                    {item.recommendations}
+                  </TableCell>
+                  <TableCell>{new Date(item.generatedAt).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="sm" onClick={() => setViewingReport(item)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Performance Report Details</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Course ID</p>
+                            <p className="font-semibold">{item.courseId}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Perf Report ID</p>
+                            <p className="font-semibold">{item.perfReportId}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Strengths</p>
+                            <p>{item.strengths}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Weakness</p>
+                            <p>{item.weakness}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Recommendations</p>
+                            <p>{item.recommendations}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">Generated At</p>
+                            <p>{new Date(item.generatedAt).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Progress Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="course" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="progress" fill="hsl(var(--primary))" />
-            </BarChart>
-          </ResponsiveContainer>
         </CardContent>
       </Card>
     </div>

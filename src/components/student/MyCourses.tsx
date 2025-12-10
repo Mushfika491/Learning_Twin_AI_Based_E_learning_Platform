@@ -38,29 +38,29 @@ interface Enrollment {
   };
 }
 
-// Mock data for tables
+// Mock data for tables with Course ID format "CSE – 101"
 const mockCourses: Course[] = [
-  { id: "CRS-001-ABC", title: "Introduction to Python", category: "Programming", difficulty_level: "Beginner", status: "active", instructor_id: "INS-001" },
-  { id: "CRS-002-DEF", title: "Data Science Fundamentals", category: "Data Science", difficulty_level: "Intermediate", status: "active", instructor_id: "INS-002" },
-  { id: "CRS-003-GHI", title: "Machine Learning Basics", category: "AI/ML", difficulty_level: "Advanced", status: "active", instructor_id: "INS-003" },
-  { id: "CRS-004-JKL", title: "Web Development with React", category: "Web Development", difficulty_level: "Intermediate", status: "active", instructor_id: "INS-001" },
-  { id: "CRS-005-MNO", title: "Database Management", category: "Database", difficulty_level: "Beginner", status: "active", instructor_id: "INS-004" },
+  { id: "CSE – 101", title: "Introduction to Python", category: "Programming", difficulty_level: "Beginner", status: "active", instructor_id: "INS – 001" },
+  { id: "CSE – 102", title: "Data Science Fundamentals", category: "Data Science", difficulty_level: "Intermediate", status: "active", instructor_id: "INS – 002" },
+  { id: "CSE – 103", title: "Machine Learning Basics", category: "AI/ML", difficulty_level: "Advanced", status: "active", instructor_id: "INS – 003" },
+  { id: "CSE – 104", title: "Web Development with React", category: "Web Development", difficulty_level: "Intermediate", status: "active", instructor_id: "INS – 001" },
+  { id: "CSE – 105", title: "Database Management", category: "Database", difficulty_level: "Beginner", status: "active", instructor_id: "INS – 004" },
 ];
 
 const mockPrerequisites: Prerequisite[] = [
-  { id: "PRE-001", course_id: "CRS-002-DEF", prerequisite_text: "Basic Python knowledge", prerequisite_course_id: "CRS-001-ABC" },
-  { id: "PRE-002", course_id: "CRS-003-GHI", prerequisite_text: "Data Science Fundamentals", prerequisite_course_id: "CRS-002-DEF" },
-  { id: "PRE-003", course_id: "CRS-003-GHI", prerequisite_text: "Statistics knowledge", prerequisite_course_id: null },
-  { id: "PRE-004", course_id: "CRS-004-JKL", prerequisite_text: "HTML/CSS basics", prerequisite_course_id: null },
-  { id: "PRE-005", course_id: "CRS-005-MNO", prerequisite_text: "Basic computer skills", prerequisite_course_id: null },
+  { id: "PRE – 001", course_id: "CSE – 102", prerequisite_text: "Basic Python knowledge", prerequisite_course_id: "CSE – 101" },
+  { id: "PRE – 002", course_id: "CSE – 103", prerequisite_text: "Data Science Fundamentals", prerequisite_course_id: "CSE – 102" },
+  { id: "PRE – 003", course_id: "CSE – 103", prerequisite_text: "Statistics knowledge", prerequisite_course_id: null },
+  { id: "PRE – 004", course_id: "CSE – 104", prerequisite_text: "HTML/CSS basics", prerequisite_course_id: null },
+  { id: "PRE – 005", course_id: "CSE – 105", prerequisite_text: "Basic computer skills", prerequisite_course_id: null },
 ];
 
 const mockEnrollments: Enrollment[] = [
-  { id: "ENR-001-XYZ", course_id: "CRS-001-ABC", enrolled_at: "2024-01-15T10:30:00Z", status: "in_progress", progress: 65, courses: { title: "Introduction to Python", category: "Programming" } },
-  { id: "ENR-002-ABC", course_id: "CRS-002-DEF", enrolled_at: "2024-02-20T14:15:00Z", status: "completed", progress: 100, courses: { title: "Data Science Fundamentals", category: "Data Science" } },
-  { id: "ENR-003-DEF", course_id: "CRS-004-JKL", enrolled_at: "2024-03-10T09:00:00Z", status: "in_progress", progress: 30, courses: { title: "Web Development with React", category: "Web Development" } },
-  { id: "ENR-004-GHI", course_id: "CRS-005-MNO", enrolled_at: "2024-03-25T11:45:00Z", status: "not_started", progress: 0, courses: { title: "Database Management", category: "Database" } },
-  { id: "ENR-005-JKL", course_id: "CRS-003-GHI", enrolled_at: "2024-04-01T16:20:00Z", status: "in_progress", progress: 45, courses: { title: "Machine Learning Basics", category: "AI/ML" } },
+  { id: "ENR – 001", course_id: "CSE – 101", enrolled_at: "2024-01-15T10:30:00Z", status: "in_progress", progress: 65, courses: { title: "Introduction to Python", category: "Programming" } },
+  { id: "ENR – 002", course_id: "CSE – 102", enrolled_at: "2024-02-20T14:15:00Z", status: "completed", progress: 100, courses: { title: "Data Science Fundamentals", category: "Data Science" } },
+  { id: "ENR – 003", course_id: "CSE – 104", enrolled_at: "2024-03-10T09:00:00Z", status: "in_progress", progress: 30, courses: { title: "Web Development with React", category: "Web Development" } },
+  { id: "ENR – 004", course_id: "CSE – 105", enrolled_at: "2024-03-25T11:45:00Z", status: "not_started", progress: 0, courses: { title: "Database Management", category: "Database" } },
+  { id: "ENR – 005", course_id: "CSE – 103", enrolled_at: "2024-04-01T16:20:00Z", status: "in_progress", progress: 45, courses: { title: "Machine Learning Basics", category: "AI/ML" } },
 ];
 
 export function MyCourses({ userId }: { userId: string }) {
@@ -211,7 +211,9 @@ export function MyCourses({ userId }: { userId: string }) {
                 <TableBody>
                   {filteredCourses.map(course => (
                     <TableRow key={course.id}>
-                      <TableCell className="font-mono text-xs">{course.id.substring(0, 12)}...</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{course.id}</Badge>
+                      </TableCell>
                       <TableCell className="font-medium">{course.title}</TableCell>
                       <TableCell>{course.category}</TableCell>
                       <TableCell>
@@ -222,7 +224,7 @@ export function MyCourses({ userId }: { userId: string }) {
                           {course.status || "N/A"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-mono text-xs">{course.instructor_id?.substring(0, 12) || "N/A"}...</TableCell>
+                      <TableCell>{course.instructor_id || "N/A"}</TableCell>
                       <TableCell>
                         <Dialog>
                           <DialogTrigger asChild>
@@ -282,7 +284,9 @@ export function MyCourses({ userId }: { userId: string }) {
                 <TableBody>
                   {filteredPrerequisites.map(prereq => (
                     <TableRow key={prereq.id}>
-                      <TableCell className="font-mono text-xs">{prereq.course_id.substring(0, 12)}...</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{prereq.course_id}</Badge>
+                      </TableCell>
                       <TableCell>{prereq.prerequisite_text || prereq.prerequisite_course_id || "N/A"}</TableCell>
                       <TableCell>
                         <Dialog>
@@ -375,8 +379,10 @@ export function MyCourses({ userId }: { userId: string }) {
                 <TableBody>
                   {filteredEnrollments.map(enrollment => (
                     <TableRow key={enrollment.id}>
-                      <TableCell className="font-mono text-xs">{enrollment.id.substring(0, 12)}...</TableCell>
-                      <TableCell className="font-mono text-xs">{enrollment.course_id.substring(0, 12)}...</TableCell>
+                      <TableCell>{enrollment.id}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{enrollment.course_id}</Badge>
+                      </TableCell>
                       <TableCell className="font-medium">{enrollment.courses.title}</TableCell>
                       <TableCell>
                         <Badge variant={
