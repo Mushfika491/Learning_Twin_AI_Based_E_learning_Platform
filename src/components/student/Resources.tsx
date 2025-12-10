@@ -2,11 +2,14 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/hooks/use-toast";
 
 interface ContentItem {
   contentId: string;
@@ -52,6 +55,21 @@ interface Question {
   category: string;
   correctAnswer: string;
 }
+
+interface Submission {
+  assessmentId: string;
+  studentId: string;
+  answer: string;
+  status: string;
+}
+
+const mockSubmissions: Submission[] = [
+  { assessmentId: "ASM – 001", studentId: "STU – 001", answer: "A variable is a named storage location in memory that holds data values.", status: "Submitted" },
+  { assessmentId: "ASM – 002", studentId: "STU – 001", answer: "Implemented linked list with insert, delete, and traverse operations using Node class.", status: "Submitted" },
+  { assessmentId: "ASM – 003", studentId: "STU – 001", answer: "", status: "Not Submitted" },
+  { assessmentId: "ASM – 004", studentId: "STU – 001", answer: "Created responsive website with HTML5, CSS3, and JavaScript including mobile navigation.", status: "Submitted" },
+  { assessmentId: "ASM – 005", studentId: "STU – 001", answer: "Time complexity analysis: O(n log n) for merge sort, O(n²) for bubble sort.", status: "Submitted" },
+];
 
 const mockContent: ContentItem[] = [
   { contentId: "CNT – 001", courseId: "CSE – 101", title: "Introduction to Programming", topic: "Variables & Data Types", uploadDate: "2024-01-15" },
@@ -100,10 +118,16 @@ export function Resources({ userId }: { userId: string }) {
   const [filesSearch, setFilesSearch] = useState("");
   const [assessmentSearch, setAssessmentSearch] = useState("");
   const [questionSearch, setQuestionSearch] = useState("");
+  const [submissionSearch, setSubmissionSearch] = useState("");
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false);
   const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
+  const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
+  const [addSubmissionDialogOpen, setAddSubmissionDialogOpen] = useState(false);
+  const [submissions, setSubmissions] = useState<Submission[]>(mockSubmissions);
+  const [newSubmission, setNewSubmission] = useState({ studentId: "", assessmentId: "", answer: "" });
 
   const handleViewAssessment = (assessment: Assessment) => {
     setSelectedAssessment(assessment);
@@ -113,6 +137,28 @@ export function Resources({ userId }: { userId: string }) {
   const handleViewQuestion = (question: Question) => {
     setSelectedQuestion(question);
     setQuestionDialogOpen(true);
+  };
+
+  const handleViewSubmission = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    setSubmissionDialogOpen(true);
+  };
+
+  const handleAddSubmission = () => {
+    if (!newSubmission.studentId || !newSubmission.assessmentId || !newSubmission.answer) {
+      toast({ title: "Error", description: "Please fill all fields", variant: "destructive" });
+      return;
+    }
+    const submission: Submission = {
+      studentId: newSubmission.studentId,
+      assessmentId: newSubmission.assessmentId,
+      answer: newSubmission.answer,
+      status: "Submitted"
+    };
+    setSubmissions([...submissions, submission]);
+    setNewSubmission({ studentId: "", assessmentId: "", answer: "" });
+    setAddSubmissionDialogOpen(false);
+    toast({ title: "Success", description: "Submission added successfully" });
   };
 
   const getStatusColor = (status: string) => {
@@ -151,6 +197,10 @@ export function Resources({ userId }: { userId: string }) {
 
   const filteredQuestions = mockQuestions.filter(item =>
     item.assessmentId.toLowerCase().includes(questionSearch.toLowerCase())
+  );
+
+  const filteredSubmissions = submissions.filter(item =>
+    item.assessmentId.toLowerCase().includes(submissionSearch.toLowerCase())
   );
 
   return (
@@ -425,12 +475,58 @@ export function Resources({ userId }: { userId: string }) {
 
         <TabsContent value="my-submissions" className="mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>My Submissions</CardTitle>
-              <CardDescription>Your submitted work</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>My Submission</CardTitle>
+                <CardDescription>Your submitted work and answers</CardDescription>
+              </div>
+              <Button onClick={() => setAddSubmissionDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Submission
+              </Button>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Submissions content coming soon...</p>
+              <div className="flex gap-4 mb-4">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by Assessment ID..."
+                    value={submissionSearch}
+                    onChange={(e) => setSubmissionSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Assessment ID</TableHead>
+                    <TableHead>Student ID</TableHead>
+                    <TableHead>Answer (Text)</TableHead>
+                    <TableHead>Status (Submitted/Not Submitted)</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredSubmissions.map((item, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{item.assessmentId}</TableCell>
+                      <TableCell>{item.studentId}</TableCell>
+                      <TableCell className="max-w-xs truncate">{item.answer || "-"}</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(item.status)}>
+                          {item.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="ghost" onClick={() => handleViewSubmission(item)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
@@ -525,6 +621,84 @@ export function Resources({ userId }: { userId: string }) {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Submission Detail Dialog */}
+      <Dialog open={submissionDialogOpen} onOpenChange={setSubmissionDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Submission Details</DialogTitle>
+            <DialogDescription>Full summary of submission for {selectedSubmission?.assessmentId}</DialogDescription>
+          </DialogHeader>
+          {selectedSubmission && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Assessment ID</p>
+                  <p className="font-medium">{selectedSubmission.assessmentId}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Student ID</p>
+                  <p className="font-medium">{selectedSubmission.studentId}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge className={getStatusColor(selectedSubmission.status)}>
+                    {selectedSubmission.status}
+                  </Badge>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Answer</p>
+                  <p className="font-medium bg-muted p-3 rounded-md">{selectedSubmission.answer || "No answer submitted yet"}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Submission Dialog */}
+      <Dialog open={addSubmissionDialogOpen} onOpenChange={setAddSubmissionDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add New Submission</DialogTitle>
+            <DialogDescription>Submit your answer for an assessment</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="studentId">Student ID</Label>
+              <Input
+                id="studentId"
+                placeholder="Enter Student ID (e.g., STU – 001)"
+                value={newSubmission.studentId}
+                onChange={(e) => setNewSubmission({ ...newSubmission, studentId: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="assessmentId">Assessment ID</Label>
+              <Input
+                id="assessmentId"
+                placeholder="Enter Assessment ID (e.g., ASM – 001)"
+                value={newSubmission.assessmentId}
+                onChange={(e) => setNewSubmission({ ...newSubmission, assessmentId: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="answer">Answer</Label>
+              <Textarea
+                id="answer"
+                placeholder="Enter your answer..."
+                value={newSubmission.answer}
+                onChange={(e) => setNewSubmission({ ...newSubmission, answer: e.target.value })}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddSubmissionDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddSubmission}>Submit</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
