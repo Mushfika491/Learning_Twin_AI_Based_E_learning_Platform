@@ -3,10 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { RoleSidebar } from "@/components/RoleSidebar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserManagementTable } from "@/components/admin/UserManagementTable";
-import { CourseManagementTable } from "@/components/admin/CourseManagementTable";
-import { ReportsTable } from "@/components/admin/ReportsTable";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 
 const AdminDashboard = () => {
@@ -64,30 +60,7 @@ const AdminDashboard = () => {
             <p className="text-muted-foreground">Manage users, courses, reports, and view system analytics</p>
           </div>
           
-          <Tabs defaultValue="analytics" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="courses">Courses</TabsTrigger>
-              <TabsTrigger value="reports">Reports</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="analytics">
-              <AnalyticsDashboard />
-            </TabsContent>
-
-            <TabsContent value="users">
-              <UserManagementTable />
-            </TabsContent>
-
-            <TabsContent value="courses">
-              <CourseManagementTable />
-            </TabsContent>
-
-            <TabsContent value="reports">
-              <ReportsTable />
-            </TabsContent>
-          </Tabs>
+          <AnalyticsDashboard />
         </main>
       </div>
     </div>
