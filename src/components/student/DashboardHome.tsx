@@ -2,8 +2,15 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { BookOpen, Award, TrendingUp, GraduationCap, Bell, FileUp } from "lucide-react";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Badge } from "@/components/ui/badge";
+
+// Helper function to get bar color based on progress value
+const getProgressColor = (progress: number): string => {
+  if (progress > 70) return "hsl(142, 76%, 36%)"; // Green for high
+  if (progress >= 40) return "hsl(48, 96%, 53%)"; // Yellow for medium
+  return "hsl(0, 84%, 60%)"; // Red for low
+};
 
 // Mock data for Learning Activity chart (hours spent learning this week by day)
 const mockLearningActivityData = [
@@ -311,9 +318,12 @@ export function DashboardHome({ userId }: { userId: string }) {
                 />
                 <Bar 
                   dataKey="progress" 
-                  fill="hsl(var(--primary))" 
                   radius={[4, 4, 0, 0]}
-                />
+                >
+                  {progressData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={getProgressColor(entry.progress)} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
