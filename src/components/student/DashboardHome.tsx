@@ -286,20 +286,20 @@ export function DashboardHome({ userId }: { userId: string }) {
             <CardDescription>Completion percentage for each course</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={progressData}>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={progressData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
                   dataKey="course" 
                   className="text-xs"
                   tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  label={{ value: 'Course Name', position: 'insideBottom', offset: -5, fill: 'hsl(var(--muted-foreground))' }}
+                  label={{ value: 'Course Name', position: 'bottom', offset: 40, fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontWeight: 500 }}
                 />
                 <YAxis 
                   domain={[0, 100]} 
                   className="text-xs"
                   tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  label={{ value: 'Completion (%)', angle: -90, position: 'insideLeft', offset: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  label={{ value: 'Completion (%)', angle: -90, position: 'left', offset: -5, fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontWeight: 500 }}
                 />
                 <Tooltip 
                   contentStyle={{ 
