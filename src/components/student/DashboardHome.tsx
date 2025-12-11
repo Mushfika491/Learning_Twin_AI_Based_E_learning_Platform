@@ -16,13 +16,13 @@ const mockLearningActivityData = [
   { day: "Sun", hours: 3.8 },
 ];
 
-// Mock data for Progress by Course chart
+// Mock data for Progress by Course chart (horizontal bar - course on Y, percentage on X)
 const mockProgressByCourseData = [
-  { course: "Python", progress: 65 },
-  { course: "Data Science", progress: 100 },
-  { course: "React", progress: 30 },
-  { course: "Database", progress: 45 },
   { course: "ML Basics", progress: 78 },
+  { course: "Algorithms", progress: 55 },
+  { course: "Database", progress: 92 },
+  { course: "Data Science", progress: 64 },
+  { course: "React", progress: 85 },
 ];
 
 interface DashboardStats {
@@ -287,21 +287,34 @@ export function DashboardHome({ userId }: { userId: string }) {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={progressData}>
+              <BarChart data={progressData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="course" className="text-xs" />
-                <YAxis className="text-xs" domain={[0, 100]} />
+                <XAxis 
+                  type="number" 
+                  domain={[0, 100]} 
+                  className="text-xs"
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  label={{ value: 'Completion Percentage (%)', position: 'insideBottom', offset: -5, fill: 'hsl(var(--muted-foreground))' }}
+                />
+                <YAxis 
+                  type="category" 
+                  dataKey="course" 
+                  className="text-xs" 
+                  width={100}
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--card))', 
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '8px'
-                  }} 
+                  }}
+                  formatter={(value: number) => [`${value}%`, 'Progress']}
                 />
                 <Bar 
                   dataKey="progress" 
                   fill="hsl(var(--primary))" 
-                  radius={[4, 4, 0, 0]}
+                  radius={[0, 4, 4, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>
