@@ -5,16 +5,15 @@ import { BookOpen, Award, TrendingUp, GraduationCap, Bell, FileUp } from "lucide
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Badge } from "@/components/ui/badge";
 
-// Mock data for Learning Activity chart (continuous line)
+// Mock data for Learning Activity chart (hours spent learning this week by day)
 const mockLearningActivityData = [
-  { name: "Week 1", activity: 12 },
-  { name: "Week 2", activity: 19 },
-  { name: "Week 3", activity: 15 },
-  { name: "Week 4", activity: 22 },
-  { name: "Week 5", activity: 18 },
-  { name: "Week 6", activity: 25 },
-  { name: "Week 7", activity: 20 },
-  { name: "Week 8", activity: 28 },
+  { day: "Mon", hours: 2.5 },
+  { day: "Tue", hours: 3.2 },
+  { day: "Wed", hours: 1.8 },
+  { day: "Thu", hours: 4.0 },
+  { day: "Fri", hours: 2.0 },
+  { day: "Sat", hours: 5.5 },
+  { day: "Sun", hours: 3.8 },
 ];
 
 // Mock data for Progress by Course chart
@@ -126,18 +125,22 @@ export function DashboardHome({ userId }: { userId: string }) {
   };
 
   const processActivityData = (activities: any[]) => {
-    const weeklyData: { [key: string]: number } = {};
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const dailyData: { [key: string]: number } = {};
+    
+    // Initialize all days with 0
+    days.forEach(day => { dailyData[day] = 0; });
+    
+    // Group activities by day of week and estimate hours (each activity ~30 min)
     activities.forEach(activity => {
       const date = new Date(activity.activity_time);
-      const weekNum = Math.ceil((Date.now() - date.getTime()) / (7 * 24 * 60 * 60 * 1000));
-      const weekKey = `Week ${Math.max(1, 8 - weekNum)}`;
-      weeklyData[weekKey] = (weeklyData[weekKey] || 0) + 1;
+      const dayName = days[date.getDay()];
+      dailyData[dayName] = (dailyData[dayName] || 0) + 0.5;
     });
 
-    return Object.entries(weeklyData)
-      .map(([name, activity]) => ({ name, activity }))
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .slice(-8);
+    // Return in week order (Mon to Sun)
+    const weekOrder = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    return weekOrder.map(day => ({ day, hours: dailyData[day] || 0 }));
   };
 
   if (loading) {
@@ -244,18 +247,28 @@ export function DashboardHome({ userId }: { userId: string }) {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={activityData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="name" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <XAxis 
+                  dataKey="day" 
+                  className="text-xs" 
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  label={{ value: 'Days of the Week', position: 'insideBottom', offset: -5, fill: 'hsl(var(--muted-foreground))' }}
+                />
+                <YAxis 
+                  className="text-xs" 
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  label={{ value: 'Hours Spent Learning', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))' }}
+                />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--card))', 
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '8px'
-                  }} 
+                  }}
+                  formatter={(value: number) => [`${value} hrs`, 'Hours']}
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="activity" 
+                  dataKey="hours" 
                   stroke="hsl(var(--primary))" 
                   strokeWidth={3}
                   dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
