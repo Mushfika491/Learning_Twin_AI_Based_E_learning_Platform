@@ -293,12 +293,13 @@ export function DashboardHome({ userId }: { userId: string }) {
                   dataKey="course" 
                   className="text-xs"
                   tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  label={{ value: 'Course Name', position: 'insideBottom', offset: -5, fill: 'hsl(var(--muted-foreground))' }}
                 />
                 <YAxis 
                   domain={[0, 100]} 
                   className="text-xs"
                   tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  label={{ value: 'Completion %', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))' }}
+                  label={{ value: 'Completion (%)', angle: -90, position: 'insideLeft', offset: 10, fill: 'hsl(var(--muted-foreground))' }}
                 />
                 <Tooltip 
                   contentStyle={{ 
