@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { BookOpen, Award, TrendingUp, GraduationCap, Bell, FileUp } from "lucide-react";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Area, AreaChart } from "recharts";
 import { Badge } from "@/components/ui/badge";
 
 // Helper function to get bar color based on progress value
@@ -11,26 +11,6 @@ const getProgressColor = (progress: number): string => {
   if (progress >= 40) return "hsl(48, 96%, 53%)"; // Yellow for medium
   return "hsl(0, 84%, 60%)"; // Red for low
 };
-
-// Mock data for Learning Activity chart (hours spent learning this week by day)
-const mockLearningActivityData = [
-  { day: "Mon", hours: 2.5 },
-  { day: "Tue", hours: 3.2 },
-  { day: "Wed", hours: 1.8 },
-  { day: "Thu", hours: 4.0 },
-  { day: "Fri", hours: 2.0 },
-  { day: "Sat", hours: 5.5 },
-  { day: "Sun", hours: 3.8 },
-];
-
-// Mock data for Progress by Course chart (horizontal bar - course on Y, percentage on X)
-const mockProgressByCourseData = [
-  { course: "ML Basics", progress: 78 },
-  { course: "Algorithms", progress: 55 },
-  { course: "Database", progress: 92 },
-  { course: "Data Science", progress: 64 },
-  { course: "React", progress: 85 },
-];
 
 interface DashboardStats {
   totalEnrolled: number;
@@ -41,13 +21,13 @@ interface DashboardStats {
 
 export function DashboardHome({ userId }: { userId: string }) {
   const [stats, setStats] = useState<DashboardStats>({
-    totalEnrolled: 5,
-    completedCourses: 2,
-    averageProgress: 48,
-    certificatesEarned: 2,
+    totalEnrolled: 0,
+    completedCourses: 0,
+    averageProgress: 0,
+    certificatesEarned: 0,
   });
-  const [activityData, setActivityData] = useState<any[]>(mockLearningActivityData);
-  const [progressData, setProgressData] = useState<any[]>(mockProgressByCourseData);
+  const [activityData, setActivityData] = useState<any[]>([]);
+  const [progressData, setProgressData] = useState<any[]>([]);
   const [newContent, setNewContent] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -251,39 +231,49 @@ export function DashboardHome({ userId }: { userId: string }) {
             <CardDescription>Hours spent learning this week</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={activityData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="day" 
-                  className="text-xs" 
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  label={{ value: 'Days of the Week', position: 'insideBottom', offset: -5, fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <YAxis 
-                  className="text-xs" 
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  label={{ value: 'Hours Spent Learning', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                  formatter={(value: number) => [`${value} hrs`, 'Hours']}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="hours" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={3}
-                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, fill: 'hsl(var(--primary))' }}
-                  connectNulls
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {activityData.length === 0 ? (
+              <p className="text-muted-foreground text-sm text-center py-8">No activity data available yet.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={activityData} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
+                  <defs>
+                    <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="day" 
+                    className="text-xs" 
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    label={{ value: 'Days of the Week', position: 'bottom', offset: 10, fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontWeight: 500 }}
+                  />
+                  <YAxis 
+                    className="text-xs" 
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    label={{ value: 'Hours Spent', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontWeight: 500 }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value: number) => [`${value} hrs`, 'Hours']}
+                  />
+                  <Area 
+                    type="natural" 
+                    dataKey="hours" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={3}
+                    fill="url(#colorHours)"
+                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, fill: 'hsl(var(--primary))' }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -293,39 +283,49 @@ export function DashboardHome({ userId }: { userId: string }) {
             <CardDescription>Completion percentage for each course</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={progressData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="course" 
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  label={{ value: 'Course Name', position: 'bottom', offset: 40, fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontWeight: 500 }}
-                />
-                <YAxis 
-                  domain={[0, 100]} 
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  label={{ value: 'Completion (%)', angle: -90, position: 'left', offset: -5, fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontWeight: 500 }}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                  formatter={(value: number) => [`${value}%`, 'Progress']}
-                />
-                <Bar 
-                  dataKey="progress" 
-                  radius={[4, 4, 0, 0]}
-                >
-                  {progressData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={getProgressColor(entry.progress)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            {progressData.length === 0 ? (
+              <p className="text-muted-foreground text-sm text-center py-8">No course progress data available yet.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={progressData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                  <defs>
+                    <linearGradient id="colorProgress" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.4}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="course" 
+                    className="text-xs"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    label={{ value: 'Course Name', position: 'bottom', offset: 40, fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontWeight: 500 }}
+                  />
+                  <YAxis 
+                    domain={[0, 100]} 
+                    className="text-xs"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    label={{ value: 'Completion (%)', angle: -90, position: 'left', offset: -5, fill: 'hsl(var(--muted-foreground))', fontSize: 12, fontWeight: 500 }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value: number) => [`${value}%`, 'Progress']}
+                  />
+                  <Bar 
+                    dataKey="progress" 
+                    radius={[4, 4, 0, 0]}
+                  >
+                    {progressData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={getProgressColor(entry.progress)} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
