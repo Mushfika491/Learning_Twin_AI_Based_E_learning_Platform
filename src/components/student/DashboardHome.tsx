@@ -235,13 +235,7 @@ export function DashboardHome({ userId }: { userId: string }) {
               <p className="text-muted-foreground text-sm text-center py-8">No activity data available yet.</p>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={activityData} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
-                  <defs>
-                    <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
+                <LineChart data={activityData} margin={{ top: 10, right: 30, left: 0, bottom: 30 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis 
                     dataKey="day" 
@@ -262,16 +256,15 @@ export function DashboardHome({ userId }: { userId: string }) {
                     }}
                     formatter={(value: number) => [`${value} hrs`, 'Hours']}
                   />
-                  <Area 
-                    type="natural" 
+                  <Line 
+                    type="monotone" 
                     dataKey="hours" 
                     stroke="hsl(var(--primary))" 
                     strokeWidth={3}
-                    fill="url(#colorHours)"
-                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, fill: 'hsl(var(--primary))' }}
+                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 5 }}
+                    activeDot={{ r: 7, fill: 'hsl(var(--primary))' }}
                   />
-                </AreaChart>
+                </LineChart>
               </ResponsiveContainer>
             )}
           </CardContent>
