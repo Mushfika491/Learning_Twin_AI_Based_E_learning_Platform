@@ -47,7 +47,7 @@ export function RoleSidebar({ role, className }: RoleSidebarProps) {
   const menuItems = roleMenuItems[role] || roleMenuItems.student;
 
   return (
-    <aside className={cn("w-64 border-r bg-card h-screen sticky top-0 overflow-y-auto", className)}>
+    <aside className={cn("w-64 bg-card h-screen sticky top-0 overflow-y-auto", className)}>
       <div className="p-6">
         <h2 className="text-lg font-semibold mb-6 text-foreground">
           {role.charAt(0).toUpperCase() + role.slice(1).replace('_', ' ')} Menu
@@ -57,8 +57,8 @@ export function RoleSidebar({ role, className }: RoleSidebarProps) {
             <NavLink
               key={item.href}
               to={item.href}
-              className="flex items-center gap-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-              activeClassName="bg-primary text-primary-foreground hover:bg-primary/90"
+              className="flex items-center gap-3 px-3 py-2 rounded-md text-muted-foreground hover:text-foreground transition-colors outline-none focus:outline-none focus-visible:outline-none"
+              activeClassName="bg-primary text-primary-foreground"
             >
               <item.icon className="h-5 w-5" />
               <span>{item.title}</span>
