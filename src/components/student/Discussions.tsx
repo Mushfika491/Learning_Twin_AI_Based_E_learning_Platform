@@ -74,14 +74,19 @@ export function Discussions({ userId }: { userId: string }) {
       `)
       .order("created_at", { ascending: false });
 
+    // If no real data, keep mock data
+    if (!data || data.length === 0) {
+      return;
+    }
+
     // Fetch creator names separately
     const discussionsWithNames = await Promise.all(
-      (data || []).map(async (discussion) => {
+      data.map(async (discussion) => {
         const { data: profile } = await supabase
           .from("profiles")
           .select("name")
           .eq("id", discussion.created_by_user_id)
-          .single();
+          .maybeSingle();
         
         return {
           ...discussion,
