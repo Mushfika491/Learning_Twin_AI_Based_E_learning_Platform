@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,9 +6,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Plus, Edit, Trash2, MessageCircle } from "lucide-react";
+import { Search, Plus, Trash2, MessageCircle, Send, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface Discussion {
   discussion_id: string;
@@ -22,6 +24,14 @@ interface Discussion {
   profiles: {
     name: string;
   };
+}
+
+interface Comment {
+  id: string;
+  comment_text: string;
+  comment_time: string;
+  user_id: string;
+  user_name?: string;
 }
 
 interface Course {
@@ -51,6 +61,13 @@ const mockDiscussions: Discussion[] = [
   }
 ];
 
+// Mock comments for demo
+const mockComments: Comment[] = [
+  { id: "1", comment_text: "Great question! The base case is crucial - it's what stops the recursion.", comment_time: "2024-03-15T11:00:00Z", user_id: "user-003", user_name: "Prof. Williams" },
+  { id: "2", comment_text: "I had the same confusion. Try visualizing it with a call stack diagram!", comment_time: "2024-03-15T12:30:00Z", user_id: "user-004", user_name: "Sarah Lee" },
+  { id: "3", comment_text: "Here's a tip: always define your base case first, then the recursive step.", comment_time: "2024-03-15T14:00:00Z", user_id: "user-001", user_name: "John Smith" },
+];
+
 export function Discussions({ userId }: { userId: string }) {
   const [discussions, setDiscussions] = useState<Discussion[]>(mockDiscussions);
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
@@ -58,12 +75,42 @@ export function Discussions({ userId }: { userId: string }) {
   const [selectedDiscussion, setSelectedDiscussion] = useState<Discussion | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newDiscussion, setNewDiscussion] = useState({ title: "", body: "", course_id: "" });
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [currentUserName, setCurrentUserName] = useState("You");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchDiscussions();
     fetchEnrolledCourses();
+    fetchCurrentUserName();
   }, [userId]);
+
+  useEffect(() => {
+    if (selectedDiscussion) {
+      fetchComments(selectedDiscussion.discussion_id);
+    }
+  }, [selectedDiscussion]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [comments]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const fetchCurrentUserName = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", userId)
+      .maybeSingle();
+    if (data) {
+      setCurrentUserName(data.name);
+    }
+  };
 
   const fetchDiscussions = async () => {
     const { data } = await supabase
@@ -74,12 +121,10 @@ export function Discussions({ userId }: { userId: string }) {
       `)
       .order("created_at", { ascending: false });
 
-    // If no real data, keep mock data
     if (!data || data.length === 0) {
       return;
     }
 
-    // Fetch creator names separately
     const discussionsWithNames = await Promise.all(
       data.map(async (discussion) => {
         const { data: profile } = await supabase
@@ -106,6 +151,42 @@ export function Discussions({ userId }: { userId: string }) {
 
     const courses = data?.map(e => e.courses).filter(Boolean) || [];
     setEnrolledCourses(courses as Course[]);
+  };
+
+  const fetchComments = async (discussionId: string) => {
+    const { data } = await supabase
+      .from("comments")
+      .select("*")
+      .eq("discussion_id", discussionId)
+      .order("comment_time", { ascending: true });
+
+    if (!data || data.length === 0) {
+      // Use mock comments for demo if the discussion is a mock one
+      if (discussionId.startsWith("DIS")) {
+        setComments(mockComments);
+      } else {
+        setComments([]);
+      }
+      return;
+    }
+
+    // Fetch user names for comments
+    const commentsWithNames = await Promise.all(
+      data.map(async (comment) => {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("name")
+          .eq("id", comment.user_id)
+          .maybeSingle();
+        
+        return {
+          ...comment,
+          user_name: profile?.name || "Unknown"
+        };
+      })
+    );
+
+    setComments(commentsWithNames);
   };
 
   const handleCreateDiscussion = async () => {
@@ -144,6 +225,46 @@ export function Discussions({ userId }: { userId: string }) {
       toast({ title: "Success", description: "Discussion deleted" });
       fetchDiscussions();
       setSelectedDiscussion(null);
+      setComments([]);
+    }
+  };
+
+  const handleSendComment = async () => {
+    if (!newComment.trim() || !selectedDiscussion) return;
+
+    // For mock discussions, just add locally
+    if (selectedDiscussion.discussion_id.startsWith("DIS")) {
+      const mockComment: Comment = {
+        id: Date.now().toString(),
+        comment_text: newComment,
+        comment_time: new Date().toISOString(),
+        user_id: userId,
+        user_name: currentUserName
+      };
+      setComments(prev => [...prev, mockComment]);
+      setNewComment("");
+      return;
+    }
+
+    const { error } = await supabase.from("comments").insert({
+      discussion_id: selectedDiscussion.discussion_id,
+      user_id: userId,
+      comment_text: newComment,
+      comment_time: new Date().toISOString()
+    });
+
+    if (error) {
+      toast({ title: "Error", description: "Failed to send comment", variant: "destructive" });
+    } else {
+      setNewComment("");
+      fetchComments(selectedDiscussion.discussion_id);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendComment();
     }
   };
 
@@ -152,11 +273,15 @@ export function Discussions({ userId }: { userId: string }) {
     d.courses.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const getInitials = (name: string) => {
+    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+  };
+
   return (
-    <div className="grid lg:grid-cols-3 gap-6">
+    <div className="grid lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
       {/* Thread List */}
-      <Card className="lg:col-span-1">
-        <CardHeader>
+      <Card className="lg:col-span-1 flex flex-col">
+        <CardHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <CardTitle>Discussions</CardTitle>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -220,8 +345,8 @@ export function Discussions({ userId }: { userId: string }) {
             </Dialog>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="relative mb-4">
+        <CardContent className="flex-1 overflow-hidden flex flex-col">
+          <div className="relative mb-4 flex-shrink-0">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search..."
@@ -231,72 +356,144 @@ export function Discussions({ userId }: { userId: string }) {
             />
           </div>
 
-          <div className="space-y-2">
-            {filteredDiscussions.map(discussion => (
-              <div
-                key={discussion.discussion_id}
-                className={`p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors ${
-                  selectedDiscussion?.discussion_id === discussion.discussion_id ? "bg-accent" : ""
-                }`}
-                onClick={() => setSelectedDiscussion(discussion)}
-              >
-                <div className="flex items-start gap-2">
-                  <MessageCircle className="h-4 w-4 mt-1 text-primary" />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm truncate">{discussion.title}</h4>
-                    <p className="text-xs text-muted-foreground">{discussion.courses.title}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(discussion.created_at).toLocaleDateString()}
-                    </p>
+          <ScrollArea className="flex-1">
+            <div className="space-y-2 pr-2">
+              {filteredDiscussions.map(discussion => (
+                <div
+                  key={discussion.discussion_id}
+                  className={`p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors ${
+                    selectedDiscussion?.discussion_id === discussion.discussion_id ? "bg-accent" : ""
+                  }`}
+                  onClick={() => setSelectedDiscussion(discussion)}
+                >
+                  <div className="flex items-start gap-2">
+                    <MessageCircle className="h-4 w-4 mt-1 text-primary" />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm truncate">{discussion.title}</h4>
+                      <p className="text-xs text-muted-foreground">{discussion.courses.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(discussion.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
 
-      {/* Thread Detail */}
-      <Card className="lg:col-span-2">
-        <CardHeader>
-          <CardTitle>Discussion Detail</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {selectedDiscussion ? (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-xl font-bold">{selectedDiscussion.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  Posted by {selectedDiscussion.profiles.name} in {selectedDiscussion.courses.title}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(selectedDiscussion.created_at).toLocaleString()}
-                </p>
-              </div>
-
-              <div className="prose prose-sm max-w-none">
-                <p>{selectedDiscussion.body}</p>
-              </div>
-
-              {selectedDiscussion.created_by_user_id === userId && (
-                <div className="flex gap-2 pt-4 border-t">
+      {/* Chat Interface */}
+      <Card className="lg:col-span-2 flex flex-col">
+        {selectedDiscussion ? (
+          <>
+            {/* Header */}
+            <CardHeader className="flex-shrink-0 border-b">
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-lg">{selectedDiscussion.title}</CardTitle>
+                  <CardDescription>
+                    {selectedDiscussion.courses.title} • Started by {selectedDiscussion.profiles.name}
+                  </CardDescription>
+                </div>
+                {selectedDiscussion.created_by_user_id === userId && (
                   <Button
-                    variant="destructive"
+                    variant="ghost"
                     size="sm"
                     onClick={() => handleDeleteDiscussion(selectedDiscussion.discussion_id)}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
+                    <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
+                )}
+              </div>
+            </CardHeader>
+
+            {/* Messages Area */}
+            <CardContent className="flex-1 overflow-hidden p-0">
+              <ScrollArea className="h-full p-4">
+                {/* Original Post */}
+                <div className="mb-6 p-4 bg-muted/50 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        {getInitials(selectedDiscussion.profiles.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-sm">{selectedDiscussion.profiles.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(selectedDiscussion.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm">{selectedDiscussion.body}</p>
                 </div>
-              )}
+
+                {/* Comments */}
+                <div className="space-y-4">
+                  {comments.map((comment) => {
+                    const isOwn = comment.user_id === userId;
+                    return (
+                      <div
+                        key={comment.id}
+                        className={`flex gap-3 ${isOwn ? "flex-row-reverse" : ""}`}
+                      >
+                        <Avatar className="h-8 w-8 flex-shrink-0">
+                          <AvatarFallback className={`text-xs ${isOwn ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
+                            {getInitials(comment.user_name || "U")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className={`max-w-[70%] ${isOwn ? "items-end" : ""}`}>
+                          <div
+                            className={`p-3 rounded-2xl ${
+                              isOwn
+                                ? "bg-primary text-primary-foreground rounded-br-md"
+                                : "bg-muted rounded-bl-md"
+                            }`}
+                          >
+                            {!isOwn && (
+                              <p className="text-xs font-medium mb-1 opacity-70">
+                                {comment.user_name}
+                              </p>
+                            )}
+                            <p className="text-sm">{comment.comment_text}</p>
+                          </div>
+                          <p className={`text-xs text-muted-foreground mt-1 ${isOwn ? "text-right" : ""}`}>
+                            {new Date(comment.comment_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+            </CardContent>
+
+            {/* Input Area */}
+            <div className="flex-shrink-0 p-4 border-t">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Type a message..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  className="flex-1"
+                />
+                <Button onClick={handleSendComment} disabled={!newComment.trim()}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              Select a discussion to view details
+          </>
+        ) : (
+          <CardContent className="flex-1 flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Select a discussion to view messages</p>
             </div>
-          )}
-        </CardContent>
+          </CardContent>
+        )}
       </Card>
     </div>
   );
