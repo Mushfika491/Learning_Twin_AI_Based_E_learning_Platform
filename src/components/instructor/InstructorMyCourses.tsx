@@ -188,10 +188,22 @@ export function InstructorMyCourses() {
     setIsDialogOpen(false);
   };
 
-  const formatCourseId = (courseId: string) => {
-    const courseFormats = ["CSC 101", "CSC 201", "CSC 303", "CSC 405", "CSC 210", "CSC 315", "CSC 420", "CSC 150", "CSC 250", "CSC 360"];
-    const index = courses.findIndex(c => c.id === courseId);
-    return courseFormats[index >= 0 ? index % courseFormats.length : 0];
+  const formatCourseId = (courseId: string, index: number = 0) => {
+    const courseFormats = ["CSC - 101", "CSC - 202", "CSC - 303", "CSC - 405", "CSC - 210", "CSC - 315", "CSC - 420"];
+    const idx = courses.findIndex(c => c.id === courseId);
+    return courseFormats[idx >= 0 ? idx % courseFormats.length : index % courseFormats.length];
+  };
+
+  const formatRatingId = (ratingId: string, index: number = 0): string => {
+    if (ratingId.includes("R -")) return ratingId;
+    const num = String(index + 1).padStart(3, '0');
+    return `R - ${num}`;
+  };
+
+  const formatStudentId = (studentId: string, index: number = 0): string => {
+    if (studentId.includes("STU -")) return studentId;
+    const num = String(index + 1).padStart(3, '0');
+    return `STU - ${num}`;
   };
 
   const filteredCourses = courses.filter(
@@ -363,11 +375,11 @@ export function InstructorMyCourses() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRatings.map((rating) => (
+                  {filteredRatings.map((rating, index) => (
                     <TableRow key={rating.id}>
-                      <TableCell className="font-mono text-xs">{rating.id.slice(0, 8)}...</TableCell>
-                      <TableCell className="font-medium">{formatCourseId(rating.course_id)}</TableCell>
-                      <TableCell className="font-mono text-xs">{rating.student_id.slice(0, 8)}...</TableCell>
+                      <TableCell className="font-mono text-xs">{formatRatingId(rating.id, index)}</TableCell>
+                      <TableCell className="font-medium">{formatCourseId(rating.course_id, index)}</TableCell>
+                      <TableCell className="font-mono text-xs">{formatStudentId(rating.student_id, index)}</TableCell>
                       <TableCell>{rating.rating_score}</TableCell>
                       <TableCell className="max-w-xs truncate">{rating.content || "-"}</TableCell>
                       <TableCell>{rating.created_at ? new Date(rating.created_at).toLocaleDateString() : "-"}</TableCell>
