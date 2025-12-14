@@ -313,9 +313,9 @@ export function MyCourses({ userId }: { userId: string }) {
                               <DialogTitle>Prerequisite Details</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-2">
-                              <p><strong>Course ID:</strong> {prereq.course_id}</p>
+                              <p><strong>Course ID:</strong> {prereq.course_id.includes("CSC -") ? prereq.course_id : `CSC - ${prereq.course_id.slice(-3)}`}</p>
                               <p><strong>Prerequisite Text:</strong> {prereq.prerequisite_text || "N/A"}</p>
-                              <p><strong>Prerequisite Course ID:</strong> {prereq.prerequisite_course_id || "N/A"}</p>
+                              <p><strong>Prerequisite Course ID:</strong> {prereq.prerequisite_course_id ? (prereq.prerequisite_course_id.includes("CSC -") ? prereq.prerequisite_course_id : `CSC - ${prereq.prerequisite_course_id.slice(-3)}`) : "N/A"}</p>
                             </div>
                           </DialogContent>
                         </Dialog>
