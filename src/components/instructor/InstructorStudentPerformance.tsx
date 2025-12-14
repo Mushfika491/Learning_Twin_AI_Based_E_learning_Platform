@@ -185,6 +185,12 @@ export function InstructorStudentPerformance() {
     return courseFormats[index >= 0 ? index % courseFormats.length : 0];
   };
 
+  const formatStudentId = (studentId: string, index: number = 0): string => {
+    if (studentId.includes("STU -")) return studentId;
+    const num = String(index + 1).padStart(3, '0');
+    return `STU - ${num}`;
+  };
+
   const getProgressForStudent = (studentId: string, courseId: string) => {
     return progress.find(p => p.student_id === studentId && p.course_id === courseId);
   };
@@ -388,9 +394,9 @@ export function InstructorStudentPerformance() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEnrollments.map(enrollment => (
+                    {filteredEnrollments.map((enrollment, index) => (
                       <TableRow key={enrollment.id}>
-                        <TableCell className="font-mono text-xs">{enrollment.user_id.substring(0, 8)}...</TableCell>
+                        <TableCell className="font-mono text-xs">{formatStudentId(enrollment.user_id, index)}</TableCell>
                         <TableCell className="font-medium">{formatCourseId(enrollment.course_id)}</TableCell>
                         <TableCell>{enrollment.progress || 0}%</TableCell>
                         <TableCell>
