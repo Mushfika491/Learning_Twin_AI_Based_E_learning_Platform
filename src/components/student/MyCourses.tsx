@@ -63,6 +63,14 @@ const mockEnrollments: Enrollment[] = [
   { id: "ENR – 005", course_id: "CSE – 103", enrolled_at: "2024-04-01T16:20:00Z", status: "in_progress", progress: 45, courses: { title: "Machine Learning Basics", category: "AI/ML" } },
 ];
 
+// Helper function to format course ID as "CSC 101" format
+const formatCourseId = (id: string, index: number = 0): string => {
+  // If already in CSE/CSC format, return as is
+  if (id.includes("CSE") || id.includes("CSC")) return id;
+  // Convert UUID to a readable format like "CSC 101"
+  return `CSC ${101 + index}`;
+};
+
 export function MyCourses({ userId }: { userId: string }) {
   const [courses, setCourses] = useState<Course[]>(mockCourses);
   const [prerequisites, setPrerequisites] = useState<Prerequisite[]>(mockPrerequisites);
@@ -209,10 +217,10 @@ export function MyCourses({ userId }: { userId: string }) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCourses.map(course => (
+                  {filteredCourses.map((course, index) => (
                     <TableRow key={course.id}>
                       <TableCell>
-                        <Badge variant="outline">{course.id}</Badge>
+                        <Badge variant="outline">{formatCourseId(course.id, index)}</Badge>
                       </TableCell>
                       <TableCell className="font-medium">{course.title}</TableCell>
                       <TableCell>{course.category}</TableCell>
@@ -237,7 +245,7 @@ export function MyCourses({ userId }: { userId: string }) {
                               <DialogTitle>Course Details</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-2">
-                              <p><strong>Course ID:</strong> {course.id}</p>
+                              <p><strong>Course ID:</strong> {formatCourseId(course.id, index)}</p>
                               <p><strong>Title:</strong> {course.title}</p>
                               <p><strong>Category:</strong> {course.category}</p>
                               <p><strong>Difficulty:</strong> {course.difficulty_level || "N/A"}</p>
