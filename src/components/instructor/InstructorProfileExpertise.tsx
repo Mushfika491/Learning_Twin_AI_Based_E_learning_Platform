@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Save, Plus, X, User, Briefcase } from "lucide-react";
+import { Save, Plus, X, User, Briefcase, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Profile {
@@ -40,8 +40,15 @@ export function InstructorProfileExpertise() {
   const [expertiseList, setExpertiseList] = useState<Expertise[]>([]);
   const [newExpertise, setNewExpertise] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
   const [userId, setUserId] = useState<string>("");
   const { toast } = useToast();
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
   const [personalForm, setPersonalForm] = useState({
     name: "",
@@ -192,6 +199,36 @@ export function InstructorProfileExpertise() {
     } else {
       fetchData();
     }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordForm.newPassword || !passwordForm.confirmPassword) {
+      toast({ title: "Error", description: "Please fill in all password fields", variant: "destructive" });
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast({ title: "Error", description: "New passwords do not match", variant: "destructive" });
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      toast({ title: "Error", description: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+
+    setIsPasswordLoading(true);
+    const { error } = await supabase.auth.updateUser({
+      password: passwordForm.newPassword,
+    });
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Password changed successfully" });
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    }
+    setIsPasswordLoading(false);
   };
 
   return (
@@ -348,6 +385,52 @@ export function InstructorProfileExpertise() {
               <p className="text-sm text-muted-foreground">No expertise added yet</p>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Change Password */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5" />
+            Change Password
+          </CardTitle>
+          <CardDescription>Update your account password</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Current Password</Label>
+              <Input
+                type="password"
+                value={passwordForm.currentPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                placeholder="Enter current password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>New Password</Label>
+              <Input
+                type="password"
+                value={passwordForm.newPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                placeholder="Enter new password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirm New Password</Label>
+              <Input
+                type="password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                placeholder="Confirm new password"
+              />
+            </div>
+          </div>
+          <Button onClick={handleChangePassword} disabled={isPasswordLoading}>
+            <Save className="h-4 w-4 mr-2" />
+            Change Password
+          </Button>
         </CardContent>
       </Card>
     </div>
