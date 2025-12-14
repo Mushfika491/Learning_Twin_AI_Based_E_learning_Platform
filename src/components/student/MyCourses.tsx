@@ -298,7 +298,7 @@ export function MyCourses({ userId }: { userId: string }) {
                   {filteredPrerequisites.map(prereq => (
                     <TableRow key={prereq.id}>
                       <TableCell>
-                        <Badge variant="outline">{prereq.course_id}</Badge>
+                        <Badge variant="outline">{prereq.course_id.includes("CSC -") ? prereq.course_id : `CSC - ${prereq.course_id.slice(-3)}`}</Badge>
                       </TableCell>
                       <TableCell>{prereq.prerequisite_text || prereq.prerequisite_course_id || "N/A"}</TableCell>
                       <TableCell>
