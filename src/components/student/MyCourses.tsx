@@ -48,11 +48,11 @@ const mockCourses: Course[] = [
 ];
 
 const mockPrerequisites: Prerequisite[] = [
-  { id: "PRE – 001", course_id: "CSE – 102", prerequisite_text: "Basic Python knowledge", prerequisite_course_id: "CSE – 101" },
-  { id: "PRE – 002", course_id: "CSE – 103", prerequisite_text: "Data Science Fundamentals", prerequisite_course_id: "CSE – 102" },
-  { id: "PRE – 003", course_id: "CSE – 103", prerequisite_text: "Statistics knowledge", prerequisite_course_id: null },
-  { id: "PRE – 004", course_id: "CSE – 104", prerequisite_text: "HTML/CSS basics", prerequisite_course_id: null },
-  { id: "PRE – 005", course_id: "CSE – 105", prerequisite_text: "Basic computer skills", prerequisite_course_id: null },
+  { id: "PRE – 001", course_id: "CSC - 102", prerequisite_text: "Basic Python knowledge", prerequisite_course_id: "CSC - 101" },
+  { id: "PRE – 002", course_id: "CSC - 103", prerequisite_text: "Data Science Fundamentals", prerequisite_course_id: "CSC - 102" },
+  { id: "PRE – 003", course_id: "CSC - 103", prerequisite_text: "Statistics knowledge", prerequisite_course_id: null },
+  { id: "PRE – 004", course_id: "CSC - 104", prerequisite_text: "HTML/CSS basics", prerequisite_course_id: null },
+  { id: "PRE – 005", course_id: "CSC - 105", prerequisite_text: "Basic computer skills", prerequisite_course_id: null },
 ];
 
 const mockEnrollments: Enrollment[] = [
