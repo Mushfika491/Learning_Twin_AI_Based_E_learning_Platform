@@ -56,19 +56,24 @@ const mockPrerequisites: Prerequisite[] = [
 ];
 
 const mockEnrollments: Enrollment[] = [
-  { id: "ENR – 001", course_id: "CSE – 101", enrolled_at: "2024-01-15T10:30:00Z", status: "in_progress", progress: 65, courses: { title: "Introduction to Python", category: "Programming" } },
-  { id: "ENR – 002", course_id: "CSE – 102", enrolled_at: "2024-02-20T14:15:00Z", status: "completed", progress: 100, courses: { title: "Data Science Fundamentals", category: "Data Science" } },
-  { id: "ENR – 003", course_id: "CSE – 104", enrolled_at: "2024-03-10T09:00:00Z", status: "in_progress", progress: 30, courses: { title: "Web Development with React", category: "Web Development" } },
-  { id: "ENR – 004", course_id: "CSE – 105", enrolled_at: "2024-03-25T11:45:00Z", status: "not_started", progress: 0, courses: { title: "Database Management", category: "Database" } },
-  { id: "ENR – 005", course_id: "CSE – 103", enrolled_at: "2024-04-01T16:20:00Z", status: "in_progress", progress: 45, courses: { title: "Machine Learning Basics", category: "AI/ML" } },
+  { id: "EN - 1", course_id: "CSC - 101", enrolled_at: "2024-01-15T10:30:00Z", status: "in_progress", progress: 65, courses: { title: "Introduction to Python", category: "Programming" } },
+  { id: "EN - 2", course_id: "CSC - 102", enrolled_at: "2024-02-20T14:15:00Z", status: "completed", progress: 100, courses: { title: "Data Science Fundamentals", category: "Data Science" } },
+  { id: "EN - 3", course_id: "CSC - 201", enrolled_at: "2024-03-10T09:00:00Z", status: "in_progress", progress: 30, courses: { title: "Web Development with React", category: "Web Development" } },
+  { id: "EN - 4", course_id: "CSC - 303", enrolled_at: "2024-03-25T11:45:00Z", status: "not_started", progress: 0, courses: { title: "Database Management", category: "Database" } },
+  { id: "EN - 5", course_id: "CSC - 405", enrolled_at: "2024-04-01T16:20:00Z", status: "in_progress", progress: 45, courses: { title: "Machine Learning Basics", category: "AI/ML" } },
 ];
 
-// Helper function to format course ID as "CSC 101" format
+// Helper function to format course ID as "CSC - 102" format
 const formatCourseId = (id: string, index: number = 0): string => {
-  // If already in CSE/CSC format, return as is
-  if (id.includes("CSE") || id.includes("CSC")) return id;
-  // Convert UUID to a readable format like "CSC 101"
-  return `CSC ${101 + index}`;
+  if (id.includes("CSC -") || id.includes("CSE -")) return id;
+  const courseFormats = ["CSC - 101", "CSC - 102", "CSC - 201", "CSC - 303", "CSC - 405", "CSC - 210", "CSC - 315"];
+  return courseFormats[index % courseFormats.length];
+};
+
+// Helper function to format enrollment ID as "EN - 1" format
+const formatEnrollmentId = (id: string, index: number = 0): string => {
+  if (id.includes("EN -")) return id;
+  return `EN - ${index + 1}`;
 };
 
 export function MyCourses({ userId }: { userId: string }) {
@@ -385,11 +390,11 @@ export function MyCourses({ userId }: { userId: string }) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredEnrollments.map(enrollment => (
+                  {filteredEnrollments.map((enrollment, index) => (
                     <TableRow key={enrollment.id}>
-                      <TableCell>{enrollment.id}</TableCell>
+                      <TableCell>{formatEnrollmentId(enrollment.id, index)}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{enrollment.course_id}</Badge>
+                        <Badge variant="outline">{formatCourseId(enrollment.course_id, index)}</Badge>
                       </TableCell>
                       <TableCell className="font-medium">{enrollment.courses.title}</TableCell>
                       <TableCell>
