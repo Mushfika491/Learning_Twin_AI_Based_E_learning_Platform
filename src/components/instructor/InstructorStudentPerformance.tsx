@@ -179,11 +179,10 @@ export function InstructorStudentPerformance() {
     return course?.title || "Unknown";
   };
 
-  const formatCourseId = (courseId: string, index?: number) => {
-    // Find the index of the course in the courses array
-    const courseIndex = index !== undefined ? index : courses.findIndex(c => c.id === courseId);
-    const num = courseIndex >= 0 ? 101 + courseIndex : 101;
-    return `CSC – ${num}`;
+  const formatCourseId = (courseId: string) => {
+    const courseFormats = ["CSC 101", "CSC 201", "CSC 303", "CSC 405", "CSC 210", "CSC 315", "CSC 420", "CSC 150", "CSC 250", "CSC 360"];
+    const index = courses.findIndex(c => c.id === courseId);
+    return courseFormats[index >= 0 ? index % courseFormats.length : 0];
   };
 
   const getProgressForStudent = (studentId: string, courseId: string) => {
