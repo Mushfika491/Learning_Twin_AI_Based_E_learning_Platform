@@ -101,6 +101,13 @@ export function InstructorContentMaterials() {
   const [deleteQuestionId, setDeleteQuestionId] = useState<string | null>(null);
   const [deleteAssignmentId, setDeleteAssignmentId] = useState<string | null>(null);
   
+  // View detail states
+  const [selectedContent, setSelectedContent] = useState<Content | null>(null);
+  const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [selectedStudentAnswer, setSelectedStudentAnswer] = useState<StudentAssessmentAnswer | null>(null);
+  
   const { toast } = useToast();
 
   const [contentForm, setContentForm] = useState({
@@ -387,6 +394,14 @@ export function InstructorContentMaterials() {
     return courseFormats[index >= 0 ? index % courseFormats.length : 0];
   };
 
+  const formatContentId = (id: string, index: number) => {
+    return `CNT – ${String(index + 1).padStart(3, "0")}`;
+  };
+
+  const formatQuizId = (id: string, index: number) => {
+    return `QZ – ${String(index + 1).padStart(3, "0")}`;
+  };
+
   const filteredContent = content.filter(c => {
     const matchesSearch = c.title.toLowerCase().includes(materialSearchTerm.toLowerCase());
     const matchesCourse = selectedCourse === "all" || c.course_id === selectedCourse;
@@ -479,15 +494,18 @@ export function InstructorContentMaterials() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredContent.map((item) => (
+                  {filteredContent.map((item, index) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-mono text-sm">{item.id.slice(0, 8)}...</TableCell>
+                      <TableCell className="font-mono text-sm">{formatContentId(item.id, index)}</TableCell>
                       <TableCell className="font-medium">{item.title}</TableCell>
                       <TableCell className="capitalize">{item.type}</TableCell>
                       <TableCell>{item.order_index} mins</TableCell>
                       <TableCell>1</TableCell>
                       <TableCell>{item.created_at ? new Date(item.created_at).toLocaleDateString() : "-"}</TableCell>
                       <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedContent(item)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => {
                           setEditingContent(item);
                           setContentForm({
@@ -557,9 +575,9 @@ export function InstructorContentMaterials() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredQuizzes.map((quiz) => (
+                  {filteredQuizzes.map((quiz, index) => (
                     <TableRow key={quiz.quiz_id}>
-                      <TableCell className="font-mono text-sm">{quiz.quiz_id.slice(0, 8)}...</TableCell>
+                      <TableCell className="font-mono text-sm">{formatQuizId(quiz.quiz_id, index)}</TableCell>
                       <TableCell className="font-medium">{quiz.title}</TableCell>
                       <TableCell>{quiz.total_marks}</TableCell>
                       <TableCell>30 mins</TableCell>
@@ -567,6 +585,9 @@ export function InstructorContentMaterials() {
                       <TableCell>{quiz.difficulty_level || "-"}</TableCell>
                       <TableCell>{quiz.created_at ? new Date(quiz.created_at).toLocaleDateString() : "-"}</TableCell>
                       <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedQuiz(quiz)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => {
                           setEditingQuiz(quiz);
                           setQuizForm({
@@ -647,6 +668,9 @@ export function InstructorContentMaterials() {
                       <TableCell>{question.correct_answer}</TableCell>
                       <TableCell>{new Date(question.upload_time).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedQuestion(question)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => {
                           setEditingQuestion(question);
                           setQuestionForm({
@@ -727,6 +751,9 @@ export function InstructorContentMaterials() {
                       <TableCell className="max-w-[150px] truncate">{assignment.rubrics}</TableCell>
                       <TableCell>{assignment.topic}</TableCell>
                       <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedAssignment(assignment)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => {
                           setEditingAssignment(assignment);
                           setAssignmentForm({
@@ -788,7 +815,7 @@ export function InstructorContentMaterials() {
                     <TableHead>Due Date Time</TableHead>
                     <TableHead>Marks</TableHead>
                     <TableHead>Submitted Time</TableHead>
-                    <TableHead>Answers</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -802,8 +829,8 @@ export function InstructorContentMaterials() {
                       <TableCell>{new Date(answer.due_date_time).toLocaleString()}</TableCell>
                       <TableCell>{answer.marks}</TableCell>
                       <TableCell>{new Date(answer.submitted_time).toLocaleString()}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon">
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedStudentAnswer(answer)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -1052,6 +1079,229 @@ export function InstructorContentMaterials() {
         title="Delete Assignment"
         description="Are you sure you want to delete this assignment?"
       />
+
+      {/* Content Detail Modal */}
+      <Dialog open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Content Details</DialogTitle>
+          </DialogHeader>
+          {selectedContent && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-muted-foreground">Content ID</Label>
+                <p className="font-medium">{formatContentId(selectedContent.id, filteredContent.findIndex(c => c.id === selectedContent.id))}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Title</Label>
+                <p className="font-medium">{selectedContent.title}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Topic</Label>
+                <p className="font-medium capitalize">{selectedContent.type}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Duration</Label>
+                <p className="font-medium">{selectedContent.order_index} mins</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Link</Label>
+                <p className="font-medium">{selectedContent.link || "-"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Upload Date</Label>
+                <p className="font-medium">{selectedContent.created_at ? new Date(selectedContent.created_at).toLocaleDateString() : "-"}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Quiz Detail Modal */}
+      <Dialog open={!!selectedQuiz} onOpenChange={() => setSelectedQuiz(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Quiz Details</DialogTitle>
+          </DialogHeader>
+          {selectedQuiz && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-muted-foreground">Quiz ID</Label>
+                <p className="font-medium">{formatQuizId(selectedQuiz.quiz_id, filteredQuizzes.findIndex(q => q.quiz_id === selectedQuiz.quiz_id))}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Title</Label>
+                <p className="font-medium">{selectedQuiz.title}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Course</Label>
+                <p className="font-medium">{courses.find(c => c.id === selectedQuiz.course_id)?.title || "-"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Points</Label>
+                <p className="font-medium">{selectedQuiz.total_marks}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Difficulty Level</Label>
+                <p className="font-medium">{selectedQuiz.difficulty_level || "-"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Upload Date</Label>
+                <p className="font-medium">{selectedQuiz.created_at ? new Date(selectedQuiz.created_at).toLocaleDateString() : "-"}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Question Detail Modal */}
+      <Dialog open={!!selectedQuestion} onOpenChange={() => setSelectedQuestion(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Question Details</DialogTitle>
+          </DialogHeader>
+          {selectedQuestion && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Question ID</Label>
+                  <p className="font-medium">{selectedQuestion.id}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Assessment ID</Label>
+                  <p className="font-medium">{selectedQuestion.assessment_id}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Question Number</Label>
+                  <p className="font-medium">{selectedQuestion.question_number}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Question Type</Label>
+                  <p className="font-medium">{selectedQuestion.question_type}</p>
+                </div>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Category</Label>
+                <p className="font-medium">{selectedQuestion.category}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Question Text</Label>
+                <p className="font-medium">{selectedQuestion.question_text}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Correct Answer</Label>
+                <p className="font-medium">{selectedQuestion.correct_answer}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Upload Time</Label>
+                <p className="font-medium">{new Date(selectedQuestion.upload_time).toLocaleString()}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Assignment Detail Modal */}
+      <Dialog open={!!selectedAssignment} onOpenChange={() => setSelectedAssignment(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Assignment Details</DialogTitle>
+          </DialogHeader>
+          {selectedAssignment && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Title</Label>
+                  <p className="font-medium">{selectedAssignment.title}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Assessment ID</Label>
+                  <p className="font-medium">{selectedAssignment.assessment_id}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Points</Label>
+                  <p className="font-medium">{selectedAssignment.points}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Topic</Label>
+                  <p className="font-medium">{selectedAssignment.topic}</p>
+                </div>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Due Date Time</Label>
+                <p className="font-medium">{new Date(selectedAssignment.due_date_time).toLocaleString()}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Rubrics</Label>
+                <p className="font-medium">{selectedAssignment.rubrics}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Upload Time</Label>
+                <p className="font-medium">{new Date(selectedAssignment.upload_time).toLocaleString()}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Student Answer Detail Modal */}
+      <Dialog open={!!selectedStudentAnswer} onOpenChange={() => setSelectedStudentAnswer(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Student Answer Details</DialogTitle>
+          </DialogHeader>
+          {selectedStudentAnswer && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Student Name</Label>
+                  <p className="font-medium">{selectedStudentAnswer.student_name}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Student ID</Label>
+                  <p className="font-medium">{selectedStudentAnswer.student_id}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Assessment Title</Label>
+                  <p className="font-medium">{selectedStudentAnswer.assessment_title}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Assessment ID</Label>
+                  <p className="font-medium">{selectedStudentAnswer.assessment_id}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Assessment Type</Label>
+                  <p className="font-medium">{selectedStudentAnswer.assessment_type}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Marks</Label>
+                  <p className="font-medium">{selectedStudentAnswer.marks}</p>
+                </div>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Due Date Time</Label>
+                <p className="font-medium">{new Date(selectedStudentAnswer.due_date_time).toLocaleString()}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Submitted Time</Label>
+                <p className="font-medium">{new Date(selectedStudentAnswer.submitted_time).toLocaleString()}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Answers</Label>
+                <p className="font-medium">{selectedStudentAnswer.answers}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
