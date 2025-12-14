@@ -381,6 +381,12 @@ export function InstructorContentMaterials() {
     setIsAssignmentDialogOpen(false);
   };
 
+  const formatCourseId = (courseId: string, index?: number) => {
+    const courseIndex = index !== undefined ? index : courses.findIndex(c => c.id === courseId);
+    const num = courseIndex >= 0 ? 101 + courseIndex : 101;
+    return `CSC – ${num}`;
+  };
+
   const filteredContent = content.filter(c => {
     const matchesSearch = c.title.toLowerCase().includes(materialSearchTerm.toLowerCase());
     const matchesCourse = selectedCourse === "all" || c.course_id === selectedCourse;

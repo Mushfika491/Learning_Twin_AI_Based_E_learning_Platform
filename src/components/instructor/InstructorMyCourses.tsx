@@ -188,6 +188,12 @@ export function InstructorMyCourses() {
     setIsDialogOpen(false);
   };
 
+  const formatCourseId = (courseId: string, index?: number) => {
+    const courseIndex = index !== undefined ? index : courses.findIndex(c => c.id === courseId);
+    const num = courseIndex >= 0 ? 101 + courseIndex : 101;
+    return `CSC – ${num}`;
+  };
+
   const filteredCourses = courses.filter(
     (c) =>
       c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -253,7 +259,7 @@ export function InstructorMyCourses() {
                 <TableBody>
                   {filteredCourses.map((course) => (
                     <TableRow key={course.id}>
-                      <TableCell className="font-mono text-xs">{course.id.slice(0, 8)}...</TableCell>
+                      <TableCell className="font-medium">{formatCourseId(course.id)}</TableCell>
                       <TableCell className="font-medium">{course.title}</TableCell>
                       <TableCell className="max-w-xs truncate">{course.description}</TableCell>
                       <TableCell>{course.category}</TableCell>
@@ -312,7 +318,7 @@ export function InstructorMyCourses() {
                 <TableBody>
                   {filteredPrerequisites.map((prereq) => (
                     <TableRow key={prereq.id}>
-                      <TableCell className="font-mono text-xs">{prereq.course_id.slice(0, 8)}...</TableCell>
+                      <TableCell className="font-medium">{formatCourseId(prereq.course_id)}</TableCell>
                       <TableCell>{prereq.prerequisite_text || "None"}</TableCell>
                     </TableRow>
                   ))}
@@ -360,7 +366,7 @@ export function InstructorMyCourses() {
                   {filteredRatings.map((rating) => (
                     <TableRow key={rating.id}>
                       <TableCell className="font-mono text-xs">{rating.id.slice(0, 8)}...</TableCell>
-                      <TableCell className="font-mono text-xs">{rating.course_id.slice(0, 8)}...</TableCell>
+                      <TableCell className="font-medium">{formatCourseId(rating.course_id)}</TableCell>
                       <TableCell className="font-mono text-xs">{rating.student_id.slice(0, 8)}...</TableCell>
                       <TableCell>{rating.rating_score}</TableCell>
                       <TableCell className="max-w-xs truncate">{rating.content || "-"}</TableCell>

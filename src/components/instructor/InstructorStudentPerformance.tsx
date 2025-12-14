@@ -179,6 +179,13 @@ export function InstructorStudentPerformance() {
     return course?.title || "Unknown";
   };
 
+  const formatCourseId = (courseId: string, index?: number) => {
+    // Find the index of the course in the courses array
+    const courseIndex = index !== undefined ? index : courses.findIndex(c => c.id === courseId);
+    const num = courseIndex >= 0 ? 101 + courseIndex : 101;
+    return `CSC – ${num}`;
+  };
+
   const getProgressForStudent = (studentId: string, courseId: string) => {
     return progress.find(p => p.student_id === studentId && p.course_id === courseId);
   };
@@ -385,7 +392,7 @@ export function InstructorStudentPerformance() {
                     {filteredEnrollments.map(enrollment => (
                       <TableRow key={enrollment.id}>
                         <TableCell className="font-mono text-xs">{enrollment.user_id.substring(0, 8)}...</TableCell>
-                        <TableCell className="font-mono text-xs">{enrollment.course_id.substring(0, 8)}...</TableCell>
+                        <TableCell className="font-medium">{formatCourseId(enrollment.course_id)}</TableCell>
                         <TableCell>{enrollment.progress || 0}%</TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded text-xs ${enrollment.status === "completed" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"}`}>
@@ -479,7 +486,7 @@ export function InstructorStudentPerformance() {
                       <TableRow key={report.id}>
                         <TableCell className="font-mono text-xs">{report.id.substring(0, 8)}...</TableCell>
                         <TableCell className="font-mono text-xs">{report.student_id.substring(0, 8)}...</TableCell>
-                        <TableCell className="font-mono text-xs">{report.course_id.substring(0, 8)}...</TableCell>
+                        <TableCell className="font-medium">{formatCourseId(report.course_id)}</TableCell>
                         <TableCell className="max-w-32 truncate">{report.strengths}</TableCell>
                         <TableCell className="max-w-32 truncate">{report.weakness}</TableCell>
                         <TableCell className="max-w-40 truncate">{report.recommendations}</TableCell>
