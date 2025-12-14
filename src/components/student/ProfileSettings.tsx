@@ -11,7 +11,7 @@ import { Save } from "lucide-react";
 interface ProfileData {
   name: string;
   email: string;
-  role: string;
+  phone_number: string;
   learning_goals: string;
   interests: string;
   achievements: string;
@@ -22,12 +22,16 @@ export function ProfileSettings({ userId }: { userId: string }) {
   const [profile, setProfile] = useState<ProfileData>({
     name: "",
     email: "",
-    role: "",
+    phone_number: "",
     learning_goals: "",
     interests: "",
     achievements: "",
     profile_summary: "",
   });
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -46,7 +50,7 @@ export function ProfileSettings({ userId }: { userId: string }) {
       setProfile({
         name: data.name || "",
         email: data.email || "",
-        role: data.role || "",
+        phone_number: data.phone_number || "",
         learning_goals: data.learning_goals || "",
         interests: data.interests || "",
         achievements: data.achievements || "",
@@ -62,6 +66,7 @@ export function ProfileSettings({ userId }: { userId: string }) {
       .from("profiles")
       .update({
         name: profile.name,
+        phone_number: profile.phone_number,
         learning_goals: profile.learning_goals,
         interests: profile.interests,
         achievements: profile.achievements,
@@ -84,6 +89,50 @@ export function ProfileSettings({ userId }: { userId: string }) {
     }
 
     setLoading(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "New passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPasswordLoading(true);
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update password",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Password updated successfully!",
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+
+    setPasswordLoading(false);
   };
 
   return (
@@ -109,8 +158,12 @@ export function ProfileSettings({ userId }: { userId: string }) {
           </div>
 
           <div>
-            <Label>Role</Label>
-            <Input value={profile.role} disabled className="bg-muted" />
+            <Label>Phone Number</Label>
+            <Input
+              value={profile.phone_number}
+              onChange={(e) => setProfile({ ...profile, phone_number: e.target.value })}
+              placeholder="Your phone number"
+            />
           </div>
         </CardContent>
       </Card>
@@ -159,6 +212,38 @@ export function ProfileSettings({ userId }: { userId: string }) {
               rows={3}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Change Password</CardTitle>
+          <CardDescription>Update your account password</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>New Password</Label>
+            <Input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Enter new password"
+            />
+          </div>
+
+          <div>
+            <Label>Confirm New Password</Label>
+            <Input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new password"
+            />
+          </div>
+
+          <Button onClick={handleChangePassword} disabled={passwordLoading} variant="secondary" className="w-full">
+            {passwordLoading ? "Updating..." : "Update Password"}
+          </Button>
         </CardContent>
       </Card>
 
