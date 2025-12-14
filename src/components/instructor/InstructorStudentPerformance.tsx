@@ -6,8 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Users, FileText, Sparkles } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Search, FileText, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 interface Course {
@@ -248,20 +247,6 @@ export function InstructorStudentPerformance() {
     }
   };
 
-  // Chart data: enrollment count per course
-  const enrollmentChartData = courses.map(course => ({
-    course: course.title.substring(0, 12),
-    students: enrollments.filter(e => e.course_id === course.id).length,
-  }));
-
-  // Avg progress per course
-  const avgProgressData = courses.map(course => {
-    const courseEnrollments = enrollments.filter(e => e.course_id === course.id);
-    const avgProg = courseEnrollments.length > 0
-      ? Math.round(courseEnrollments.reduce((acc, e) => acc + (e.progress || 0), 0) / courseEnrollments.length)
-      : 0;
-    return { course: course.title.substring(0, 12), progress: avgProg };
-  });
 
   return (
     <div className="space-y-6">
@@ -284,73 +269,7 @@ export function InstructorStudentPerformance() {
         </Select>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <Users className="h-8 w-8 text-primary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Students</p>
-                <p className="text-2xl font-bold">{uniqueStudents.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div>
-              <p className="text-sm text-muted-foreground">Total Enrollments</p>
-              <p className="text-2xl font-bold">{enrollments.length}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div>
-              <p className="text-sm text-muted-foreground">Courses</p>
-              <p className="text-2xl font-bold">{courses.length}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Charts */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Enrollments by Course</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={enrollmentChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="course" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="students" fill="hsl(var(--primary))" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Average Progress by Course</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={avgProgressData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="course" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="progress" fill="hsl(var(--primary))" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
 
       <Tabs defaultValue="students" className="space-y-4">
         <TabsList>
