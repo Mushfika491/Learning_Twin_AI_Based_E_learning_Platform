@@ -308,7 +308,7 @@ export function InstructorStudentPerformance() {
                 />
               </div>
               <div className="overflow-x-auto max-w-full border rounded-md">
-                <Table className="min-w-[1200px]">
+                <Table className="min-w-[800px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Student Name</TableHead>
@@ -317,22 +317,18 @@ export function InstructorStudentPerformance() {
                       <TableHead>Enrollment Status</TableHead>
                       <TableHead>Academic Level</TableHead>
                       <TableHead>Subscription Type</TableHead>
-                      <TableHead>Learning Goal</TableHead>
-                      <TableHead>Completed Courses</TableHead>
                       <TableHead>Avg Scores</TableHead>
-                      <TableHead>Interest</TableHead>
-                      <TableHead>Achievements</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredStudents.map(studentId => {
+                    {filteredStudents.map((studentId, index) => {
                       const profile = getStudentProfile(studentId);
                       const studentEnrollments = enrollments.filter(e => e.user_id === studentId);
                       const hasActive = studentEnrollments.some(e => e.status === "active");
                       return (
                         <TableRow key={studentId}>
                           <TableCell className="font-medium">{profile?.name || "Unknown"}</TableCell>
-                          <TableCell className="font-mono text-xs">{studentId.substring(0, 8)}...</TableCell>
+                          <TableCell className="font-mono text-xs">{formatStudentId(studentId, index)}</TableCell>
                           <TableCell>{profile?.phone_number || "-"}</TableCell>
                           <TableCell>
                             <span className={`px-2 py-1 rounded text-xs ${hasActive ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" : "bg-muted text-muted-foreground"}`}>
@@ -341,17 +337,13 @@ export function InstructorStudentPerformance() {
                           </TableCell>
                           <TableCell>Undergraduate</TableCell>
                           <TableCell>Standard</TableCell>
-                          <TableCell className="max-w-32 truncate">{profile?.learning_goals || "-"}</TableCell>
-                          <TableCell>{getCompletedCoursesCount(studentId)}</TableCell>
                           <TableCell>{getAvgScore(studentId)}%</TableCell>
-                          <TableCell className="max-w-32 truncate">{profile?.interests || "-"}</TableCell>
-                          <TableCell className="max-w-32 truncate">{profile?.achievements || "-"}</TableCell>
                         </TableRow>
                       );
                     })}
                     {filteredStudents.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                           No students found
                         </TableCell>
                       </TableRow>
