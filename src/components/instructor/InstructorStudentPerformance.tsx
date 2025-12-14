@@ -179,16 +179,22 @@ export function InstructorStudentPerformance() {
     return course?.title || "Unknown";
   };
 
-  const formatCourseId = (courseId: string) => {
-    const courseFormats = ["CSC 101", "CSC 201", "CSC 303", "CSC 405", "CSC 210", "CSC 315", "CSC 420", "CSC 150", "CSC 250", "CSC 360"];
-    const index = courses.findIndex(c => c.id === courseId);
-    return courseFormats[index >= 0 ? index % courseFormats.length : 0];
+  const formatCourseId = (courseId: string, index: number = 0) => {
+    const courseFormats = ["CSC - 101", "CSC - 202", "CSC - 303", "CSC - 405", "CSC - 210", "CSC - 315", "CSC - 420"];
+    const idx = courses.findIndex(c => c.id === courseId);
+    return courseFormats[idx >= 0 ? idx % courseFormats.length : index % courseFormats.length];
   };
 
   const formatStudentId = (studentId: string, index: number = 0): string => {
     if (studentId.includes("STU -")) return studentId;
     const num = String(index + 1).padStart(3, '0');
     return `STU - ${num}`;
+  };
+
+  const formatPerfReportId = (reportId: string, index: number = 0): string => {
+    if (reportId.includes("PERF -")) return reportId;
+    const num = String(index + 1).padStart(3, '0');
+    return `PERF - ${num}`;
   };
 
   const getProgressForStudent = (studentId: string, courseId: string) => {
@@ -479,11 +485,11 @@ export function InstructorStudentPerformance() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredReports.map(report => (
+                    {filteredReports.map((report, index) => (
                       <TableRow key={report.id}>
-                        <TableCell className="font-mono text-xs">{report.id.substring(0, 8)}...</TableCell>
-                        <TableCell className="font-mono text-xs">{report.student_id.substring(0, 8)}...</TableCell>
-                        <TableCell className="font-medium">{formatCourseId(report.course_id)}</TableCell>
+                        <TableCell className="font-mono text-xs">{formatPerfReportId(report.id, index)}</TableCell>
+                        <TableCell className="font-mono text-xs">{formatStudentId(report.student_id, index)}</TableCell>
+                        <TableCell className="font-medium">{formatCourseId(report.course_id, index)}</TableCell>
                         <TableCell className="max-w-32 truncate">{report.strengths}</TableCell>
                         <TableCell className="max-w-32 truncate">{report.weakness}</TableCell>
                         <TableCell className="max-w-40 truncate">{report.recommendations}</TableCell>
