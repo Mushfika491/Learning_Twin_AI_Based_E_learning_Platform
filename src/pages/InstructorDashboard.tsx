@@ -83,7 +83,7 @@ const InstructorDashboard = () => {
       <Navbar user={profile} />
       <div className="flex w-full">
         <RoleSidebar role="instructor" />
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-8 min-w-0 overflow-x-hidden">
           {renderContent()}
         </div>
       </div>

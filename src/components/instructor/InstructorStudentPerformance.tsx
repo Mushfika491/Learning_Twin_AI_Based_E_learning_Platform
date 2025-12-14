@@ -295,8 +295,8 @@ export function InstructorStudentPerformance() {
                   className="w-64"
                 />
               </div>
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="overflow-x-auto max-w-full border rounded-md">
+                <Table className="min-w-[1200px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Student Name</TableHead>
@@ -368,8 +368,8 @@ export function InstructorStudentPerformance() {
                   className="w-64"
                 />
               </div>
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="overflow-x-auto max-w-full border rounded-md">
+                <Table className="min-w-[900px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Student ID</TableHead>
@@ -460,8 +460,8 @@ export function InstructorStudentPerformance() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="overflow-x-auto max-w-full border rounded-md">
+                <Table className="min-w-[1100px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Perf Report ID</TableHead>
