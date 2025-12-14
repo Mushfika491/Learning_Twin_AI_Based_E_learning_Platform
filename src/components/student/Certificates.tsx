@@ -8,10 +8,10 @@ import { Badge } from "@/components/ui/badge";
 
 interface Certificate {
   certificateId: string;
-  studentId: string;
   courseId: string;
   courseName: string;
   issueDate: string;
+  expiryDate: string;
   downloadableLink: string;
   status: "Completed" | "Processing" | "Revoked";
 }
@@ -19,46 +19,46 @@ interface Certificate {
 const mockCertificates: Certificate[] = [
   {
     certificateId: "CERT-001",
-    studentId: "STU-2024-001",
     courseId: "CSE – 101",
     courseName: "Introduction to Computer Science",
     issueDate: "2024-01-15",
+    expiryDate: "2027-01-15",
     downloadableLink: "https://certificates.learningtwin.com/cert-001.pdf",
     status: "Completed",
   },
   {
     certificateId: "CERT-002",
-    studentId: "STU-2024-001",
     courseId: "CSE – 202",
     courseName: "Data Structures and Algorithms",
     issueDate: "2024-02-20",
+    expiryDate: "2027-02-20",
     downloadableLink: "https://certificates.learningtwin.com/cert-002.pdf",
     status: "Completed",
   },
   {
     certificateId: "CERT-003",
-    studentId: "STU-2024-001",
     courseId: "CSE – 305",
     courseName: "Database Management Systems",
     issueDate: "2024-03-10",
+    expiryDate: "2027-03-10",
     downloadableLink: "https://certificates.learningtwin.com/cert-003.pdf",
     status: "Processing",
   },
   {
     certificateId: "CERT-004",
-    studentId: "STU-2024-001",
     courseId: "CSE – 401",
     courseName: "Machine Learning Fundamentals",
     issueDate: "2024-04-05",
+    expiryDate: "2027-04-05",
     downloadableLink: "https://certificates.learningtwin.com/cert-004.pdf",
     status: "Completed",
   },
   {
     certificateId: "CERT-005",
-    studentId: "STU-2024-001",
     courseId: "CSE – 110",
     courseName: "Web Development Basics",
     issueDate: "2024-05-01",
+    expiryDate: "2027-05-01",
     downloadableLink: "https://certificates.learningtwin.com/cert-005.pdf",
     status: "Revoked",
   },
@@ -107,10 +107,10 @@ export function Certificates({ userId }: { userId: string }) {
             <TableHeader>
               <TableRow>
                 <TableHead>Certificate ID</TableHead>
-                <TableHead>Student ID</TableHead>
                 <TableHead>Course ID</TableHead>
                 <TableHead>Course Name</TableHead>
                 <TableHead>Issue Date</TableHead>
+                <TableHead>Expiry Date</TableHead>
                 <TableHead>Downloadable Link</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
@@ -123,10 +123,10 @@ export function Certificates({ userId }: { userId: string }) {
                       {cert.certificateId}
                     </code>
                   </TableCell>
-                  <TableCell>{cert.studentId}</TableCell>
                   <TableCell>{cert.courseId}</TableCell>
                   <TableCell className="font-medium">{cert.courseName}</TableCell>
                   <TableCell>{new Date(cert.issueDate).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(cert.expiryDate).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Button size="sm" variant="outline" asChild>
                       <a href={cert.downloadableLink} target="_blank" rel="noopener noreferrer">
