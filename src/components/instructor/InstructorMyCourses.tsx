@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Trash2, Search, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Star, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 
@@ -50,6 +50,7 @@ export function InstructorMyCourses() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string>("");
+  const [selectedPrereq, setSelectedPrereq] = useState<Prerequisite | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -325,6 +326,7 @@ export function InstructorMyCourses() {
                   <TableRow>
                     <TableHead>Course ID</TableHead>
                     <TableHead>Prerequisites</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -332,11 +334,16 @@ export function InstructorMyCourses() {
                     <TableRow key={prereq.id}>
                       <TableCell className="font-medium">{formatCourseId(prereq.course_id)}</TableCell>
                       <TableCell>{prereq.prerequisite_text || "None"}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedPrereq(prereq)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                   {filteredPrerequisites.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
                         No prerequisites found
                       </TableCell>
                     </TableRow>
@@ -474,6 +481,41 @@ export function InstructorMyCourses() {
         title="Delete Course"
         description="Are you sure you want to delete this course? This action cannot be undone."
       />
+
+      {/* Prerequisite Detail Modal */}
+      <Dialog open={!!selectedPrereq} onOpenChange={() => setSelectedPrereq(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Prerequisite Details</DialogTitle>
+          </DialogHeader>
+          {selectedPrereq && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-muted-foreground">Course ID</Label>
+                <p className="font-medium">{formatCourseId(selectedPrereq.course_id)}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Course Title</Label>
+                <p className="font-medium">
+                  {courses.find(c => c.id === selectedPrereq.course_id)?.title || "-"}
+                </p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Prerequisite</Label>
+                <p className="font-medium">{selectedPrereq.prerequisite_text || "None"}</p>
+              </div>
+              {selectedPrereq.prerequisite_course_id && (
+                <div>
+                  <Label className="text-muted-foreground">Linked Course</Label>
+                  <p className="font-medium">
+                    {courses.find(c => c.id === selectedPrereq.prerequisite_course_id)?.title || formatCourseId(selectedPrereq.prerequisite_course_id)}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
