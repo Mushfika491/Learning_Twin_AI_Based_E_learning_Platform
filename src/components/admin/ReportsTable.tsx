@@ -37,7 +37,7 @@ interface Report {
 const mockReports: Report[] = [
   { 
     id: "1", 
-    reportId: "RPT-001", 
+    reportId: "R - 001", 
     title: "Monthly User Activity", 
     type: "Activity", 
     coursePopularity: "High",
@@ -49,7 +49,7 @@ const mockReports: Report[] = [
   },
   { 
     id: "2", 
-    reportId: "RPT-002", 
+    reportId: "R - 002", 
     title: "Course Completion Analysis", 
     type: "Performance", 
     coursePopularity: "Medium",
@@ -61,7 +61,7 @@ const mockReports: Report[] = [
   },
   { 
     id: "3", 
-    reportId: "RPT-003", 
+    reportId: "R - 003", 
     title: "Revenue Report Q4 2024", 
     type: "Financial", 
     coursePopularity: "High",
@@ -73,7 +73,7 @@ const mockReports: Report[] = [
   },
   { 
     id: "4", 
-    reportId: "RPT-004", 
+    reportId: "R - 004", 
     title: "System Health Check", 
     type: "System", 
     coursePopularity: "Low",
@@ -85,7 +85,7 @@ const mockReports: Report[] = [
   },
   { 
     id: "5", 
-    reportId: "RPT-005", 
+    reportId: "R - 005", 
     title: "User Engagement Metrics", 
     type: "Analytics", 
     coursePopularity: "High",
@@ -130,7 +130,7 @@ export function ReportsTable() {
   const handleAddReport = () => {
     const newReport: Report = {
       id: String(reports.length + 1),
-      reportId: formData.reportId || `RPT-${String(reports.length + 1).padStart(3, '0')}`,
+      reportId: formData.reportId || `R - ${String(reports.length + 1).padStart(3, '0')}`,
       title: formData.title || "",
       type: formData.type || "",
       coursePopularity: formData.coursePopularity || "",
@@ -354,7 +354,7 @@ export function ReportsTable() {
                 id="reportId"
                 value={formData.reportId}
                 onChange={(e) => setFormData({ ...formData, reportId: e.target.value })}
-                placeholder="RPT-001"
+                placeholder="R - 001"
               />
             </div>
             <div className="space-y-2">
