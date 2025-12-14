@@ -122,12 +122,33 @@ export function Resources({ userId }: { userId: string }) {
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
+  const [selectedMaterial, setSelectedMaterial] = useState<CourseMaterial | null>(null);
+  const [selectedFile, setSelectedFile] = useState<ContentFile | null>(null);
   const [assessmentDialogOpen, setAssessmentDialogOpen] = useState(false);
   const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
+  const [contentDialogOpen, setContentDialogOpen] = useState(false);
+  const [materialDialogOpen, setMaterialDialogOpen] = useState(false);
+  const [fileDialogOpen, setFileDialogOpen] = useState(false);
   const [addSubmissionDialogOpen, setAddSubmissionDialogOpen] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>(mockSubmissions);
   const [newSubmission, setNewSubmission] = useState({ studentId: "", assessmentId: "", answer: "" });
+
+  const handleViewContent = (content: ContentItem) => {
+    setSelectedContent(content);
+    setContentDialogOpen(true);
+  };
+
+  const handleViewMaterial = (material: CourseMaterial) => {
+    setSelectedMaterial(material);
+    setMaterialDialogOpen(true);
+  };
+
+  const handleViewFile = (file: ContentFile) => {
+    setSelectedFile(file);
+    setFileDialogOpen(true);
+  };
 
   const handleViewAssessment = (assessment: Assessment) => {
     setSelectedAssessment(assessment);
@@ -251,7 +272,7 @@ export function Resources({ userId }: { userId: string }) {
                       <TableCell>{item.topic}</TableCell>
                       <TableCell>{item.uploadDate}</TableCell>
                       <TableCell>
-                        <Button size="sm" variant="ghost">
+                        <Button size="sm" variant="ghost" onClick={() => handleViewContent(item)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -296,7 +317,7 @@ export function Resources({ userId }: { userId: string }) {
                       <TableCell>{item.lectureSlideNum}</TableCell>
                       <TableCell>{item.lectureDuration}</TableCell>
                       <TableCell>
-                        <Button size="sm" variant="ghost">
+                        <Button size="sm" variant="ghost" onClick={() => handleViewMaterial(item)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -349,7 +370,7 @@ export function Resources({ userId }: { userId: string }) {
                       <TableCell className="max-w-xs truncate">{item.fileLocation}</TableCell>
                       <TableCell>{item.uploadTime}</TableCell>
                       <TableCell>
-                        <Button size="sm" variant="ghost">
+                        <Button size="sm" variant="ghost" onClick={() => handleViewFile(item)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -699,6 +720,114 @@ export function Resources({ userId }: { userId: string }) {
             <Button variant="outline" onClick={() => setAddSubmissionDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleAddSubmission}>Submit</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Content Detail Dialog */}
+      <Dialog open={contentDialogOpen} onOpenChange={setContentDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Content Details</DialogTitle>
+            <DialogDescription>Detailed view of the content item</DialogDescription>
+          </DialogHeader>
+          {selectedContent && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Content ID</p>
+                  <p className="font-medium">{selectedContent.contentId}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Course ID</p>
+                  <p className="font-medium">{selectedContent.courseId}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Title</p>
+                  <p className="font-medium">{selectedContent.title}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Topic</p>
+                  <p className="font-medium">{selectedContent.topic}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Upload Date</p>
+                  <p className="font-medium">{selectedContent.uploadDate}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Course Material Detail Dialog */}
+      <Dialog open={materialDialogOpen} onOpenChange={setMaterialDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Course Material Details</DialogTitle>
+            <DialogDescription>Detailed view of the course material</DialogDescription>
+          </DialogHeader>
+          {selectedMaterial && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Course ID</p>
+                  <p className="font-medium">{selectedMaterial.courseId}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Lecture Slide Number</p>
+                  <p className="font-medium">{selectedMaterial.lectureSlideNum}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Lecture Duration</p>
+                  <p className="font-medium">{selectedMaterial.lectureDuration}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Content File Detail Dialog */}
+      <Dialog open={fileDialogOpen} onOpenChange={setFileDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Content File Details</DialogTitle>
+            <DialogDescription>Detailed view of the file</DialogDescription>
+          </DialogHeader>
+          {selectedFile && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Content ID</p>
+                  <p className="font-medium">{selectedFile.contentId}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Content Type</p>
+                  <Badge variant="outline">{selectedFile.contentType}</Badge>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">File Name</p>
+                  <p className="font-medium">{selectedFile.fileName}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">File Type</p>
+                  <Badge variant="secondary">{selectedFile.fileType}</Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">File Size</p>
+                  <p className="font-medium">{selectedFile.fileSize}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">File Location</p>
+                  <p className="font-medium bg-muted p-2 rounded-md text-sm">{selectedFile.fileLocation}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Upload Time</p>
+                  <p className="font-medium">{selectedFile.uploadTime}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
