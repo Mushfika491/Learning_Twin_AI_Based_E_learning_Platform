@@ -31,7 +31,7 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
     email: "",
     phoneNumber: "",
     role: "Student",
-    status: "Issued",
+    status: "active",
   });
 
   useEffect(() => {
@@ -41,10 +41,10 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
         email: initialData.email || "",
         phoneNumber: initialData.phoneNumber || "",
         role: initialData.role || "Student",
-        status: initialData.status || "Issued",
+        status: initialData.status || "active",
       });
     } else {
-      setFormData({ name: "", email: "", phoneNumber: "", role: "Student", status: "Issued" });
+      setFormData({ name: "", email: "", phoneNumber: "", role: "Student", status: "active" });
     }
   }, [initialData, open]);
 
@@ -115,8 +115,8 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Issued">Issued</SelectItem>
-                <SelectItem value="Revoked">Revoked</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
           </div>
