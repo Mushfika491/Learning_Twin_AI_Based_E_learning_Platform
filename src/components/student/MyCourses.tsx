@@ -165,10 +165,13 @@ export function MyCourses({ userId }: { userId: string }) {
   const handleDeleteEnrollment = async () => {
     if (!deletingEnrollmentId) return;
 
+    // Use trim to handle potential whitespace in the enrollment_id
+    const trimmedId = deletingEnrollmentId.trim();
+    
     const { error } = await supabase
       .from("student_enrollments")
       .delete()
-      .eq("enrollment_id", deletingEnrollmentId);
+      .eq("enrollment_id", trimmedId);
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -293,8 +296,9 @@ export function MyCourses({ userId }: { userId: string }) {
   );
 
   const getAvailableCoursesForEnrollment = () => {
-    const enrolledCourseIds = enrollments.map(e => e.course_id);
-    return courses.filter(c => !enrolledCourseIds.includes(c.course_id) && c.status === "active");
+    // Trim whitespace from enrollment course_ids for accurate comparison
+    const enrolledCourseIds = enrollments.map(e => e.course_id.trim());
+    return courses.filter(c => !enrolledCourseIds.includes(c.course_id.trim()) && c.status === "active");
   };
 
   return (
