@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Eye, Trash2, Plus, Pencil } from "lucide-react";
+import { Search, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -243,88 +243,9 @@ export function MyCourses({ userId }: { userId: string }) {
         <TabsContent value="courses">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Courses</CardTitle>
-                  <CardDescription>Manage all available courses</CardDescription>
-                </div>
-                <Dialog open={isAddCourseDialogOpen} onOpenChange={setIsAddCourseDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={resetForm}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Course
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add New Course</DialogTitle>
-                      <DialogDescription>Enter course details below</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Course ID *</Label>
-                        <Input
-                          placeholder="e.g., CSE-101"
-                          value={formData.course_id}
-                          onChange={(e) => setFormData({ ...formData, course_id: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Title *</Label>
-                        <Input
-                          placeholder="e.g., Introduction to Python"
-                          value={formData.title}
-                          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Category *</Label>
-                        <Input
-                          placeholder="e.g., Programming"
-                          value={formData.category}
-                          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Difficulty Level</Label>
-                        <Select value={formData.difficulty_level} onValueChange={(v) => setFormData({ ...formData, difficulty_level: v })}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Beginner">Beginner</SelectItem>
-                            <SelectItem value="Intermediate">Intermediate</SelectItem>
-                            <SelectItem value="Advanced">Advanced</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Status</Label>
-                        <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Instructor ID</Label>
-                        <Input
-                          placeholder="e.g., INS-101"
-                          value={formData.instructor_id}
-                          onChange={(e) => setFormData({ ...formData, instructor_id: e.target.value })}
-                        />
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setIsAddCourseDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleAddCourse}>Add Course</Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+              <div>
+                <CardTitle>Courses</CardTitle>
+                <CardDescription>All available courses</CardDescription>
               </div>
             </CardHeader>
             <CardContent>
@@ -371,35 +292,27 @@ export function MyCourses({ userId }: { userId: string }) {
                         </TableCell>
                         <TableCell>{course.instructor_id || "N/A"}</TableCell>
                         <TableCell>
-                          <div className="flex gap-1">
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button variant="ghost" size="sm" onClick={() => setViewingCourse(course)}>
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>Course Details</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-2">
-                                  <p><strong>Course ID:</strong> {course.course_id}</p>
-                                  <p><strong>Title:</strong> {course.title}</p>
-                                  <p><strong>Category:</strong> {course.category}</p>
-                                  <p><strong>Difficulty:</strong> {course.difficulty_level || "N/A"}</p>
-                                  <p><strong>Status:</strong> {course.status || "N/A"}</p>
-                                  <p><strong>Instructor ID:</strong> {course.instructor_id || "N/A"}</p>
-                                  <p><strong>Created At:</strong> {course.created_at || "N/A"}</p>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                            <Button variant="ghost" size="sm" onClick={() => openEditDialog(course)}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => openDeleteDialog(course.course_id)}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" onClick={() => setViewingCourse(course)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Course Details</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-2">
+                                <p><strong>Course ID:</strong> {course.course_id}</p>
+                                <p><strong>Title:</strong> {course.title}</p>
+                                <p><strong>Category:</strong> {course.category}</p>
+                                <p><strong>Difficulty:</strong> {course.difficulty_level || "N/A"}</p>
+                                <p><strong>Status:</strong> {course.status || "N/A"}</p>
+                                <p><strong>Instructor ID:</strong> {course.instructor_id || "N/A"}</p>
+                                <p><strong>Created At:</strong> {course.created_at || "N/A"}</p>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </TableCell>
                       </TableRow>
                     ))}
