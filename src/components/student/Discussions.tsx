@@ -35,7 +35,7 @@ interface Comment {
 }
 
 interface Course {
-  id: string;
+  course_id: string;
   title: string;
 }
 
@@ -113,28 +113,40 @@ export function Discussions({ userId }: { userId: string }) {
   };
 
   const fetchDiscussions = async () => {
-    const { data } = await supabase
+    // Fetch discussions
+    const { data: discussionsData, error: discussionsError } = await supabase
       .from("discussions")
-      .select(`
-        *,
-        courses(title)
-      `)
+      .select("*")
       .order("created_at", { ascending: false });
 
-    if (!data || data.length === 0) {
+    if (discussionsError || !discussionsData || discussionsData.length === 0) {
       return;
     }
 
+    // Fetch all student courses to map course_id to title
+    const { data: coursesData } = await supabase
+      .from("student_courses")
+      .select("course_id, title");
+
+    const courseMap = new Map<string, string>();
+    (coursesData || []).forEach((course: any) => {
+      courseMap.set(course.course_id?.trim(), course.title);
+    });
+
+    // Fetch user profiles for discussion authors
     const discussionsWithNames = await Promise.all(
-      data.map(async (discussion) => {
+      discussionsData.map(async (discussion: any) => {
         const { data: profile } = await supabase
           .from("profiles")
           .select("name")
           .eq("id", discussion.created_by_user_id)
           .maybeSingle();
         
+        const courseTitle = courseMap.get(discussion.course_id?.trim()) || "Unknown Course";
+        
         return {
           ...discussion,
+          courses: { title: courseTitle },
           profiles: { name: profile?.name || "Unknown" }
         };
       })
@@ -144,13 +156,16 @@ export function Discussions({ userId }: { userId: string }) {
   };
 
   const fetchEnrolledCourses = async () => {
-    const { data } = await supabase
-      .from("enrollments")
-      .select("courses(id, title)")
-      .eq("user_id", userId);
+    const { data, error } = await supabase
+      .from("student_courses")
+      .select("course_id, title");
 
-    const courses = data?.map(e => e.courses).filter(Boolean) || [];
-    setEnrolledCourses(courses as Course[]);
+    if (error) {
+      console.error("Error fetching courses:", error);
+      return;
+    }
+
+    setEnrolledCourses(data || []);
   };
 
   const fetchComments = async (discussionId: string) => {
@@ -309,7 +324,7 @@ export function Discussions({ userId }: { userId: string }) {
                       </SelectTrigger>
                       <SelectContent>
                         {enrolledCourses.map(course => (
-                          <SelectItem key={course.id} value={course.id}>
+                          <SelectItem key={course.course_id} value={course.course_id}>
                             {course.title}
                           </SelectItem>
                         ))}
