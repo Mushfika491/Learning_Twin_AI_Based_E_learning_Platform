@@ -51,17 +51,13 @@ interface Question {
 }
 
 interface Submission {
-  assessmentId: string;
-  studentId: string;
+  id: string;
+  assessment_id: string;
   answer: string;
   status: string;
+  student_id: string;
+  created_at: string | null;
 }
-
-const mockSubmissions: Submission[] = [
-  { assessmentId: "ASM-001", studentId: "STU-001", answer: "A variable is a named storage location in memory that holds data values.", status: "Submitted" },
-  { assessmentId: "ASM-002", studentId: "STU-001", answer: "Implemented linked list with insert, delete, and traverse operations using Node class.", status: "Submitted" },
-  { assessmentId: "ASM-003", studentId: "STU-001", answer: "", status: "Not Submitted" },
-];
 
 export function Resources({ userId }: { userId: string }) {
   const [activeTab, setActiveTab] = useState("course-materials");
@@ -86,8 +82,9 @@ export function Resources({ userId }: { userId: string }) {
   const [addSubmissionDialogOpen, setAddSubmissionDialogOpen] = useState(false);
   const [addAssessmentDialogOpen, setAddAssessmentDialogOpen] = useState(false);
   const [addQuestionDialogOpen, setAddQuestionDialogOpen] = useState(false);
-  const [submissions, setSubmissions] = useState<Submission[]>(mockSubmissions);
-  const [newSubmission, setNewSubmission] = useState({ studentId: "", assessmentId: "", answer: "" });
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [submissionsLoading, setSubmissionsLoading] = useState(true);
+  const [newSubmission, setNewSubmission] = useState({ assessment_id: "", answer: "" });
   const [newAssessment, setNewAssessment] = useState({
     assessment_id: "",
     assessment_type: "Quiz",
@@ -108,7 +105,24 @@ export function Resources({ userId }: { userId: string }) {
     fetchCourses();
     fetchAssessments();
     fetchQuestions();
+    fetchSubmissions();
   }, []);
+
+  const fetchSubmissions = async () => {
+    setSubmissionsLoading(true);
+    const { data, error } = await supabase
+      .from("student_submissions")
+      .select("*")
+      .order("created_at", { ascending: false });
+    
+    if (error) {
+      console.error("Fetch submissions error:", error);
+      toast({ title: "Error", description: "Failed to fetch submissions", variant: "destructive" });
+    } else {
+      setSubmissions(data || []);
+    }
+    setSubmissionsLoading(false);
+  };
 
   const fetchCourses = async () => {
     setLoading(true);
@@ -263,21 +277,44 @@ export function Resources({ userId }: { userId: string }) {
     setSubmissionDialogOpen(true);
   };
 
-  const handleAddSubmission = () => {
-    if (!newSubmission.studentId || !newSubmission.assessmentId || !newSubmission.answer) {
+  const handleAddSubmission = async () => {
+    if (!newSubmission.assessment_id || !newSubmission.answer) {
       toast({ title: "Error", description: "Please fill all fields", variant: "destructive" });
       return;
     }
-    const submission: Submission = {
-      studentId: newSubmission.studentId,
-      assessmentId: newSubmission.assessmentId,
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      toast({ title: "Error", description: "You must be logged in", variant: "destructive" });
+      return;
+    }
+
+    const { error } = await supabase.from("student_submissions").insert({
+      assessment_id: newSubmission.assessment_id,
       answer: newSubmission.answer,
-      status: "Submitted"
-    };
-    setSubmissions([...submissions, submission]);
-    setNewSubmission({ studentId: "", assessmentId: "", answer: "" });
-    setAddSubmissionDialogOpen(false);
-    toast({ title: "Success", description: "Submission added successfully" });
+      status: "Submitted",
+      student_id: session.user.id,
+    });
+
+    if (error) {
+      console.error("Add submission error:", error);
+      toast({ title: "Error", description: "Failed to add submission: " + error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Submission added successfully" });
+      setAddSubmissionDialogOpen(false);
+      setNewSubmission({ assessment_id: "", answer: "" });
+      fetchSubmissions();
+    }
+  };
+
+  const handleDeleteSubmission = async (id: string) => {
+    const { error } = await supabase.from("student_submissions").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: "Failed to delete submission", variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Submission deleted" });
+      fetchSubmissions();
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -311,7 +348,7 @@ export function Resources({ userId }: { userId: string }) {
   );
 
   const filteredSubmissions = submissions.filter(item =>
-    item.assessmentId.toLowerCase().includes(submissionSearch.toLowerCase())
+    item.assessment_id.toLowerCase().includes(submissionSearch.toLowerCase())
   );
 
   return (
@@ -583,36 +620,48 @@ export function Resources({ userId }: { userId: string }) {
                   />
                 </div>
               </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Assessment ID</TableHead>
-                    <TableHead>Student ID</TableHead>
-                    <TableHead>Answer</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Details</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredSubmissions.map((submission, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{submission.assessmentId}</TableCell>
-                      <TableCell>{submission.studentId}</TableCell>
-                      <TableCell className="max-w-xs truncate">{submission.answer || "No answer"}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(submission.status)}>
-                          {submission.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button size="sm" variant="ghost" onClick={() => handleViewSubmission(submission)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              {submissionsLoading ? (
+                <p className="text-center text-muted-foreground py-4">Loading submissions...</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Assessment ID</TableHead>
+                      <TableHead>Answer</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSubmissions.map((submission) => (
+                      <TableRow key={submission.id}>
+                        <TableCell className="font-medium">{submission.assessment_id}</TableCell>
+                        <TableCell className="max-w-xs truncate">{submission.answer || "No answer"}</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(submission.status)}>
+                            {submission.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="flex gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => handleViewSubmission(submission)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDeleteSubmission(submission.id)}>
+                            ✕
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredSubmissions.length === 0 && !submissionsLoading && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-4">
+                          No submissions found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -761,18 +810,14 @@ export function Resources({ userId }: { userId: string }) {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Submission Details</DialogTitle>
-            <DialogDescription>Full summary of submission for {selectedSubmission?.assessmentId}</DialogDescription>
+            <DialogDescription>Full summary of submission for {selectedSubmission?.assessment_id}</DialogDescription>
           </DialogHeader>
           {selectedSubmission && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Assessment ID</p>
-                  <p className="font-medium">{selectedSubmission.assessmentId}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Student ID</p>
-                  <p className="font-medium">{selectedSubmission.studentId}</p>
+                  <p className="font-medium">{selectedSubmission.assessment_id}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
@@ -799,32 +844,25 @@ export function Resources({ userId }: { userId: string }) {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="studentId">Student ID</Label>
-              <Input
-                id="studentId"
-                placeholder="Enter Student ID (e.g., STU – 001)"
-                value={newSubmission.studentId}
-                onChange={(e) => setNewSubmission({ ...newSubmission, studentId: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="assessmentId">Assessment ID</Label>
               <Input
                 id="assessmentId"
-                placeholder="Enter Assessment ID (e.g., ASM – 001)"
-                value={newSubmission.assessmentId}
-                onChange={(e) => setNewSubmission({ ...newSubmission, assessmentId: e.target.value })}
+                placeholder="Enter Assessment ID (e.g., asm-001)"
+                value={newSubmission.assessment_id}
+                onChange={(e) => setNewSubmission({ ...newSubmission, assessment_id: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="answer">Answer</Label>
               <Textarea
                 id="answer"
-                placeholder="Enter your answer..."
+                placeholder="Enter your answer (max 120 characters)..."
                 value={newSubmission.answer}
-                onChange={(e) => setNewSubmission({ ...newSubmission, answer: e.target.value })}
+                onChange={(e) => setNewSubmission({ ...newSubmission, answer: e.target.value.slice(0, 120) })}
                 rows={4}
+                maxLength={120}
               />
+              <p className="text-xs text-muted-foreground">{newSubmission.answer.length}/120 characters</p>
             </div>
           </div>
           <DialogFooter>
