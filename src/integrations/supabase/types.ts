@@ -280,15 +280,7 @@ export type Database = {
           discussion_type?: string | null
           title?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "discussions_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       enrollments: {
         Row: {
