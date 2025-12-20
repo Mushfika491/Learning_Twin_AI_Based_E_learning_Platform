@@ -30,8 +30,8 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
     name: "",
     email: "",
     phoneNumber: "",
-    role: "student",
-    status: "active",
+    role: "Student",
+    status: "Issued",
   });
 
   useEffect(() => {
@@ -40,11 +40,11 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
         name: initialData.name || "",
         email: initialData.email || "",
         phoneNumber: initialData.phoneNumber || "",
-        role: initialData.role || "student",
-        status: initialData.status || "active",
+        role: initialData.role || "Student",
+        status: initialData.status || "Issued",
       });
     } else {
-      setFormData({ name: "", email: "", phoneNumber: "", role: "student", status: "active" });
+      setFormData({ name: "", email: "", phoneNumber: "", role: "Student", status: "Issued" });
     }
   }, [initialData, open]);
 
@@ -53,13 +53,15 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
     onSubmit(formData);
   };
 
+  const isEditing = !!initialData;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Update user information
+            {isEditing ? "Update user information" : "Add a new user to the system"}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -69,6 +71,7 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
               id="name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="John Doe"
               required
             />
           </div>
@@ -79,6 +82,7 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="john@example.com"
               required
             />
           </div>
@@ -88,8 +92,21 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
               id="phoneNumber"
               value={formData.phoneNumber}
               onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-              placeholder="+1 234 567 890"
+              placeholder="+8801842900265"
+              required
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="role">Role</Label>
+            <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Student">Student</SelectItem>
+                <SelectItem value="Instructor">Instructor</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
@@ -98,8 +115,8 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="Issued">Issued</SelectItem>
+                <SelectItem value="Revoked">Revoked</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -108,7 +125,7 @@ export function UserFormDialog({ open, onOpenChange, onSubmit, initialData, titl
               Cancel
             </Button>
             <Button type="submit">
-              Update User
+              {isEditing ? "Update User" : "Add User"}
             </Button>
           </div>
         </form>
