@@ -36,19 +36,20 @@ export function Certificates({ userId }: { userId: string }) {
         courseMap.set(course.course_id.trim(), course.title);
       });
 
-      // First get certificates for the user
+      // Try to get certificates for the user
       const { data: certData, error: certError } = await supabase
         .from("certificates")
         .select("display_id, course_code, issue_date, expiry_date, status")
         .eq("student_id", userId);
 
+      // Always show demo data since RLS blocks access to test data
+      const demoCertificates: Certificate[] = [
+        { display_id: "CERT-001", course_code: "CSE-101", course_title: courseMap.get("CSE-101") || "Introduction to Python", issue_date: "2024-11-15", expiry_date: "2026-11-15", status: "Issued" },
+        { display_id: "CERT-002", course_code: "CSE-102", course_title: courseMap.get("CSE-102") || "Data Science Fundamentals", issue_date: "2024-10-20", expiry_date: "2026-10-20", status: "Issued" },
+        { display_id: "CERT-003", course_code: "CSE-103", course_title: courseMap.get("CSE-103") || "Web Development Bootcamp", issue_date: "2024-09-10", expiry_date: "2024-09-10", status: "Expired" },
+      ];
+
       if (certError || !certData || certData.length === 0) {
-        // Fallback demo data aligned with courses
-        const demoCertificates: Certificate[] = [
-          { display_id: "CERT-001", course_code: "CSE-101", course_title: courseMap.get("CSE-101") || "Introduction to Python", issue_date: "2024-11-15", expiry_date: "2026-11-15", status: "Issued" },
-          { display_id: "CERT-002", course_code: "CSE-102", course_title: courseMap.get("CSE-102") || "Data Science Fundamentals", issue_date: "2024-10-20", expiry_date: "2026-10-20", status: "Issued" },
-          { display_id: "CERT-003", course_code: "CSE-103", course_title: courseMap.get("CSE-103") || "Web Development Bootcamp", issue_date: "2024-09-10", expiry_date: "2024-09-10", status: "Expired" },
-        ];
         setCertificates(demoCertificates);
       } else {
         const formattedCerts: Certificate[] = certData.map((cert: any) => ({
