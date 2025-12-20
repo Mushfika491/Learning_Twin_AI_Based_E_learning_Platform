@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 interface Certificate {
   display_id: string;
-  course_id: string;
+  course_code: string;
   course_title: string;
   issue_date: string;
   expiry_date: string;
@@ -25,30 +25,37 @@ export function Certificates({ userId }: { userId: string }) {
   const fetchCertificates = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // First get certificates for the user
+      const { data: certData, error: certError } = await supabase
         .from("certificates")
-        .select(`
-          display_id,
-          course_id,
-          issue_date,
-          expiry_date,
-          status,
-          courses (
-            title
-          )
-        `)
+        .select("display_id, course_code, issue_date, expiry_date, status")
         .eq("student_id", userId);
 
-      if (error) {
+      if (certError) {
         toast.error("Failed to fetch certificates");
-        console.error("Error fetching certificates:", error);
+        console.error("Error fetching certificates:", certError);
         return;
       }
 
-      const formattedCerts: Certificate[] = (data || []).map((cert: any) => ({
+      // Get all student_courses to map course_code to title
+      const { data: coursesData, error: coursesError } = await supabase
+        .from("student_courses")
+        .select("course_id, title");
+
+      if (coursesError) {
+        console.error("Error fetching courses:", coursesError);
+      }
+
+      // Create a map of course_code to title
+      const courseMap = new Map<string, string>();
+      (coursesData || []).forEach((course: any) => {
+        courseMap.set(course.course_id.trim(), course.title);
+      });
+
+      const formattedCerts: Certificate[] = (certData || []).map((cert: any) => ({
         display_id: cert.display_id || "N/A",
-        course_id: cert.course_id,
-        course_title: cert.courses?.title || "Unknown Course",
+        course_code: cert.course_code?.trim() || "N/A",
+        course_title: courseMap.get(cert.course_code?.trim()) || "Unknown Course",
         issue_date: cert.issue_date,
         expiry_date: cert.expiry_date,
         status: cert.status || "Issued",
@@ -70,7 +77,7 @@ export function Certificates({ userId }: { userId: string }) {
   }, [userId]);
 
   const filteredCertificates = certificates.filter(cert =>
-    cert.course_id.toLowerCase().includes(searchTerm.toLowerCase())
+    cert.course_code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusBadge = (status: string) => {
@@ -141,9 +148,7 @@ export function Certificates({ userId }: { userId: string }) {
                       </code>
                     </TableCell>
                     <TableCell>
-                      <code className="text-xs bg-muted px-2 py-1 rounded">
-                        {cert.course_id.substring(0, 7)}
-                      </code>
+                      <Badge variant="outline">{cert.course_code}</Badge>
                     </TableCell>
                     <TableCell className="font-medium max-w-[200px] truncate">
                       {cert.course_title}
