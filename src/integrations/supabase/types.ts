@@ -49,6 +49,39 @@ export type Database = {
           },
         ]
       }
+      assessment_questions: {
+        Row: {
+          assessment_id: string
+          category: string | null
+          correct_answer: string | null
+          created_at: string | null
+          id: string
+          question_number: number
+          question_text: string
+          question_type: string
+        }
+        Insert: {
+          assessment_id: string
+          category?: string | null
+          correct_answer?: string | null
+          created_at?: string | null
+          id?: string
+          question_number: number
+          question_text: string
+          question_type: string
+        }
+        Update: {
+          assessment_id?: string
+          category?: string | null
+          correct_answer?: string | null
+          created_at?: string | null
+          id?: string
+          question_number?: number
+          question_text?: string
+          question_type?: string
+        }
+        Relationships: []
+      }
       certificates: {
         Row: {
           certificate_code: string
@@ -639,6 +672,51 @@ export type Database = {
             referencedColumns: ["quiz_id"]
           },
         ]
+      }
+      student_assessments: {
+        Row: {
+          assessment_id: string
+          assessment_title: string
+          assessment_type: string
+          created_at: string | null
+          due_date_time: string | null
+          feedback: string | null
+          id: string
+          obtained_mark: number | null
+          performance_level: string | null
+          status: string | null
+          student_id: string
+          total_marks: number
+        }
+        Insert: {
+          assessment_id: string
+          assessment_title: string
+          assessment_type: string
+          created_at?: string | null
+          due_date_time?: string | null
+          feedback?: string | null
+          id?: string
+          obtained_mark?: number | null
+          performance_level?: string | null
+          status?: string | null
+          student_id: string
+          total_marks?: number
+        }
+        Update: {
+          assessment_id?: string
+          assessment_title?: string
+          assessment_type?: string
+          created_at?: string | null
+          due_date_time?: string | null
+          feedback?: string | null
+          id?: string
+          obtained_mark?: number | null
+          performance_level?: string | null
+          status?: string | null
+          student_id?: string
+          total_marks?: number
+        }
+        Relationships: []
       }
       student_courses: {
         Row: {
