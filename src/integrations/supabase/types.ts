@@ -633,6 +633,38 @@ export type Database = {
         }
         Relationships: []
       }
+      student_enrollments: {
+        Row: {
+          course_id: string
+          created_at: string
+          enrollment_id: string
+          learning_status: string
+          title: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          enrollment_id: string
+          learning_status?: string
+          title: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          enrollment_id?: string
+          learning_status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_course"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "student_courses"
+            referencedColumns: ["course_id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
