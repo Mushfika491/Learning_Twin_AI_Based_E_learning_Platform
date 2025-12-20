@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { GraduationCap, Users, TrendingUp, Shield, Brain, Code } from "lucide-react";
+import { GraduationCap, Users, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
@@ -24,9 +24,6 @@ const Register = () => {
     { value: "student", label: "Student", icon: GraduationCap },
     { value: "instructor", label: "Instructor", icon: Users },
     { value: "admin", label: "Admin", icon: Shield },
-    { value: "advisor", label: "Advisor", icon: TrendingUp },
-    { value: "data_scientist", label: "Data Scientist", icon: Brain },
-    { value: "dev_team", label: "Dev Team", icon: Code },
   ];
 
   useEffect(() => {
@@ -237,7 +234,7 @@ const Register = () => {
               <div className="space-y-3">
                 <Label>Select Your Role</Label>
                 <RadioGroup value={role} onValueChange={setRole}>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     {roles.map((roleOption) => {
                       const Icon = roleOption.icon;
                       return (
