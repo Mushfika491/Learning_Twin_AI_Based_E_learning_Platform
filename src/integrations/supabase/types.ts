@@ -903,6 +903,30 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          category: string
+          id: string
+          setting_id: string
+          setting_title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          id?: string
+          setting_id: string
+          setting_title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          id?: string
+          setting_id?: string
+          setting_title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
