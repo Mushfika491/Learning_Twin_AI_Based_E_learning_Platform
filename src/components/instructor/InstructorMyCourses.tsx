@@ -299,10 +299,15 @@ export function InstructorMyCourses() {
   };
 
   const filteredCourses = courses.filter(
-    (c) =>
-      c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (c.difficulty_level || "").toLowerCase().includes(searchTerm.toLowerCase())
+    (c) => {
+      const searchLower = searchTerm.toLowerCase();
+      const formattedId = formatCourseId(c.id).toLowerCase();
+      return c.title.toLowerCase().includes(searchLower) ||
+        c.category.toLowerCase().includes(searchLower) ||
+        (c.difficulty_level || "").toLowerCase().includes(searchLower) ||
+        (c.status || "").toLowerCase().includes(searchLower) ||
+        formattedId.includes(searchLower);
+    }
   );
 
   const filteredPrerequisites = prereqSearchTerm
