@@ -228,7 +228,7 @@ export function Resources({ userId }: { userId: string }) {
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="course-materials">Course Materials</TabsTrigger>
+          <TabsTrigger value="course-materials">Lecture Slides</TabsTrigger>
           <TabsTrigger value="my-assessments">My Assessments</TabsTrigger>
           <TabsTrigger value="my-submissions">My Submissions</TabsTrigger>
         </TabsList>
@@ -260,7 +260,7 @@ export function Resources({ userId }: { userId: string }) {
                     <TableHead>Title</TableHead>
                     <TableHead>Topic</TableHead>
                     <TableHead>Upload Date</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Details</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -307,7 +307,7 @@ export function Resources({ userId }: { userId: string }) {
                     <TableHead>Course ID</TableHead>
                     <TableHead>Lecture Slide Num</TableHead>
                     <TableHead>Lecture Duration</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Details</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -356,7 +356,7 @@ export function Resources({ userId }: { userId: string }) {
                     <TableHead>File Size</TableHead>
                     <TableHead>File Location</TableHead>
                     <TableHead>Upload Time</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Details</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
