@@ -83,7 +83,7 @@ export function AnalyticsDashboard() {
 
       // Calculate stats
       const totalUsers = usersData?.length || 0;
-      const activeUsers = usersData?.filter(u => u.status === "Issued").length || 0;
+      const activeUsers = usersData?.filter(u => u.status === "active").length || 0;
       const totalCourses = coursesData?.length || 0;
       const totalReports = reportsData?.length || 0;
 
@@ -187,7 +187,7 @@ export function AnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.activeUsers}</div>
-            <p className="text-xs text-muted-foreground">Status: Issued</p>
+            <p className="text-xs text-muted-foreground">Status: Active</p>
           </CardContent>
         </Card>
         <Card>
