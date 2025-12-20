@@ -58,31 +58,6 @@ export function InstructorDiscussions() {
     discussion_type: "announcement",
   });
 
-  // Mock data for demonstration (5 rows)
-  const mockCourses: Course[] = [
-    { id: "CRS-001-uuid", title: "Introduction to Python" },
-    { id: "CRS-002-uuid", title: "Advanced JavaScript" },
-    { id: "CRS-003-uuid", title: "Data Science Fundamentals" },
-    { id: "CRS-004-uuid", title: "React Development" },
-    { id: "CRS-005-uuid", title: "Machine Learning Basics" },
-  ];
-
-  const mockDiscussions: Discussion[] = [
-    { discussion_id: "DSC-001", course_id: "CRS-001-uuid", created_by_user_id: "instructor-uuid", title: "Welcome to Python Programming!", body: "Welcome everyone! This is the official discussion thread for our Python course. Feel free to ask questions and share your progress.", discussion_type: "announcement", created_at: "2025-01-15T09:00:00Z" },
-    { discussion_id: "DSC-002", course_id: "CRS-001-uuid", created_by_user_id: "instructor-uuid", title: "Assignment 1 Q&A", body: "Post your questions about Assignment 1 here. I'll be checking regularly to help you out.", discussion_type: "qa", created_at: "2025-01-16T10:00:00Z" },
-    { discussion_id: "DSC-003", course_id: "CRS-002-uuid", created_by_user_id: "instructor-uuid", title: "JavaScript Best Practices Discussion", body: "Let's discuss JavaScript best practices and coding standards. Share your tips and tricks!", discussion_type: "general", created_at: "2025-01-17T11:00:00Z" },
-    { discussion_id: "DSC-004", course_id: "CRS-003-uuid", created_by_user_id: "instructor-uuid", title: "Data Visualization Tools", body: "Which data visualization tools are you using? Let's share our experiences with different libraries.", discussion_type: "general", created_at: "2025-01-18T14:00:00Z" },
-    { discussion_id: "DSC-005", course_id: "CRS-005-uuid", created_by_user_id: "instructor-uuid", title: "ML Project Ideas", body: "Looking for project ideas? Post your suggestions and get feedback from peers and instructors.", discussion_type: "qa", created_at: "2025-01-19T15:00:00Z" },
-  ];
-
-  const mockComments: Comment[] = [
-    { id: "CMT-001", discussion_id: "DSC-001", user_id: "student-001", comment_text: "Thank you for this course! Very excited to start learning Python.", comment_time: "2025-01-15T10:30:00Z" },
-    { id: "CMT-002", discussion_id: "DSC-001", user_id: "student-002", comment_text: "Great introduction! The examples are very helpful.", comment_time: "2025-01-15T11:45:00Z" },
-    { id: "CMT-003", discussion_id: "DSC-002", user_id: "student-003", comment_text: "I have a question about the loop exercise in Assignment 1.", comment_time: "2025-01-16T14:00:00Z" },
-    { id: "CMT-004", discussion_id: "DSC-003", user_id: "student-001", comment_text: "I recommend using ESLint for maintaining code quality.", comment_time: "2025-01-17T16:30:00Z" },
-    { id: "CMT-005", discussion_id: "DSC-005", user_id: "student-004", comment_text: "How about building a sentiment analysis model for social media?", comment_time: "2025-01-19T18:00:00Z" },
-  ];
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -93,39 +68,54 @@ export function InstructorDiscussions() {
     setUserId(session.user.id);
 
     // Get instructor's courses
-    const { data: coursesData } = await supabase
+    const { data: coursesData, error: coursesError } = await supabase
       .from("courses")
       .select("id, title")
       .eq("instructor_id", session.user.id);
 
-    // Use fetched data or fallback to mock data
-    if (coursesData && coursesData.length > 0) {
-      setCourses(coursesData);
+    if (coursesError) {
+      toast({ title: "Error", description: "Failed to fetch courses", variant: "destructive" });
+      return;
+    }
 
+    setCourses(coursesData || []);
+
+    if (coursesData && coursesData.length > 0) {
       const courseIds = coursesData.map(c => c.id);
-      const { data: discussionsData } = await supabase
+      
+      // Fetch discussions for instructor's courses
+      const { data: discussionsData, error: discussionsError } = await supabase
         .from("discussions")
         .select("*")
         .in("course_id", courseIds)
         .order("created_at", { ascending: false });
-      setDiscussions(discussionsData && discussionsData.length > 0 ? (discussionsData as Discussion[]) : mockDiscussions);
 
-      const discussionIds = (discussionsData || mockDiscussions).map(d => d.discussion_id);
+      if (discussionsError) {
+        toast({ title: "Error", description: "Failed to fetch discussions", variant: "destructive" });
+      } else {
+        setDiscussions((discussionsData as Discussion[]) || []);
+      }
+
+      // Fetch comments for all discussions
+      const discussionIds = (discussionsData || []).map(d => d.discussion_id);
       if (discussionIds.length > 0) {
-        const { data: commentsData } = await supabase
+        const { data: commentsData, error: commentsError } = await supabase
           .from("comments")
           .select("*")
           .in("discussion_id", discussionIds)
           .order("comment_time", { ascending: true });
-        setComments(commentsData && commentsData.length > 0 ? (commentsData as Comment[]) : mockComments);
+
+        if (commentsError) {
+          toast({ title: "Error", description: "Failed to fetch comments", variant: "destructive" });
+        } else {
+          setComments((commentsData as Comment[]) || []);
+        }
       } else {
-        setComments(mockComments);
+        setComments([]);
       }
     } else {
-      // Use mock data when no real data exists
-      setCourses(mockCourses);
-      setDiscussions(mockDiscussions);
-      setComments(mockComments);
+      setDiscussions([]);
+      setComments([]);
     }
   };
 
