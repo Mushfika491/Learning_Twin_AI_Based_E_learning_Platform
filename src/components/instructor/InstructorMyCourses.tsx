@@ -401,15 +401,25 @@ export function InstructorMyCourses() {
       })
     : prerequisites;
 
-  const filteredRatings = ratingsSearchTerm
-    ? ratings.filter((r) => {
-        const courseTitle = getCourseTitle(r.course_id).toLowerCase();
-        const searchLower = ratingsSearchTerm.toLowerCase();
-        return courseTitle.includes(searchLower) || 
-               (r.content || "").toLowerCase().includes(searchLower) ||
-               r.course_id.toLowerCase().includes(searchLower);
-      })
-    : ratings;
+  const filteredRatings = ratings.filter((r, index) => {
+    if (!ratingsSearchTerm) return true;
+    
+    const searchLower = ratingsSearchTerm.toLowerCase().trim();
+    if (!searchLower) return true;
+    
+    const courseTitle = getCourseTitle(r.course_id).toLowerCase();
+    const formattedCourseId = formatCourseId(r.course_id, index).toLowerCase();
+    const reviewText = (r.content || "").toLowerCase();
+    const formattedRatingId = formatRatingId(r.id, index).toLowerCase();
+    const formattedStudentId = formatStudentId(r.student_id, index).toLowerCase();
+    
+    return courseTitle.includes(searchLower) || 
+           formattedCourseId.includes(searchLower) ||
+           reviewText.includes(searchLower) ||
+           formattedRatingId.includes(searchLower) ||
+           formattedStudentId.includes(searchLower) ||
+           String(r.rating_score).includes(searchLower);
+  });
 
   return (
     <div className="space-y-6">
