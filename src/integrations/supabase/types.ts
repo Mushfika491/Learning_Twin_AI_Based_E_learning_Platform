@@ -49,6 +49,36 @@ export type Database = {
           },
         ]
       }
+      admin_activity_logs: {
+        Row: {
+          description: string
+          id: string
+          log_id: string
+          source_ip_address: string
+          status: string
+          timestamps: string
+          user_id: string
+        }
+        Insert: {
+          description: string
+          id?: string
+          log_id: string
+          source_ip_address: string
+          status?: string
+          timestamps?: string
+          user_id: string
+        }
+        Update: {
+          description?: string
+          id?: string
+          log_id?: string
+          source_ip_address?: string
+          status?: string
+          timestamps?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_reports: {
         Row: {
           completion_rate: number

@@ -1,4 +1,4 @@
-import { Home, Users, BookOpen, TrendingUp, Brain, Code, FileText, BarChart3, Upload, AlertTriangle, Database, Activity, Settings, MessageSquare, User } from "lucide-react";
+import { Home, Users, BookOpen, TrendingUp, Brain, Code, FileText, BarChart3, Upload, AlertTriangle, Database, Activity, Settings, MessageSquare, User, ClipboardList } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,7 @@ const roleMenuItems: Record<string, SidebarItem[]> = {
     { title: "User Management", href: "/admin/dashboard?tab=users", icon: Users },
     { title: "Reports", href: "/admin/dashboard?tab=reports", icon: FileText },
     { title: "System Settings", href: "/admin/dashboard?tab=settings", icon: Settings },
+    { title: "Activity Logs", href: "/admin/dashboard?tab=logs", icon: ClipboardList },
     { title: "My Profile", href: "/admin/dashboard?tab=profile", icon: User },
   ],
   advisor: [
