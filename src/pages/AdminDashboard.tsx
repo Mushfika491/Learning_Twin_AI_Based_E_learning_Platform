@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { RoleSidebar } from "@/components/RoleSidebar";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { UserManagementTable } from "@/components/admin/UserManagementTable";
+import { CoursesEnrollmentsTable } from "@/components/admin/CoursesEnrollmentsTable";
 import { ReportsTable } from "@/components/admin/ReportsTable";
 import { SystemSettingsTable } from "@/components/admin/SystemSettingsTable";
 import { ActivityLogsTable } from "@/components/admin/ActivityLogsTable";
@@ -56,6 +57,8 @@ const AdminDashboard = () => {
     switch (currentTab) {
       case "users":
         return <UserManagementTable />;
+      case "courses":
+        return <CoursesEnrollmentsTable />;
       case "reports":
         return <ReportsTable />;
       case "settings":
@@ -73,6 +76,8 @@ const AdminDashboard = () => {
     switch (currentTab) {
       case "users":
         return { title: "User Management", description: "Manage all platform users" };
+      case "courses":
+        return { title: "Courses & Enrollments", description: "Manage courses and student enrollments" };
       case "reports":
         return { title: "Reports", description: "View and manage system reports" };
       case "settings":
