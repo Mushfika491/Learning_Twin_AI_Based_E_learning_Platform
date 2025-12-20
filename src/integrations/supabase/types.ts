@@ -54,21 +54,30 @@ export type Database = {
           certificate_code: string
           certificate_id: string
           course_id: string
+          display_id: string | null
+          expiry_date: string | null
           issue_date: string | null
+          status: string | null
           student_id: string
         }
         Insert: {
           certificate_code?: string
           certificate_id?: string
           course_id: string
+          display_id?: string | null
+          expiry_date?: string | null
           issue_date?: string | null
+          status?: string | null
           student_id: string
         }
         Update: {
           certificate_code?: string
           certificate_id?: string
           course_id?: string
+          display_id?: string | null
+          expiry_date?: string | null
           issue_date?: string | null
+          status?: string | null
           student_id?: string
         }
         Relationships: [
