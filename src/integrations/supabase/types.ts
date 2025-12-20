@@ -603,6 +603,36 @@ export type Database = {
           },
         ]
       }
+      student_courses: {
+        Row: {
+          category: string
+          course_id: string
+          created_at: string | null
+          difficulty_level: string | null
+          instructor_id: string | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          category: string
+          course_id: string
+          created_at?: string | null
+          difficulty_level?: string | null
+          instructor_id?: string | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          category?: string
+          course_id?: string
+          created_at?: string | null
+          difficulty_level?: string | null
+          instructor_id?: string | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
