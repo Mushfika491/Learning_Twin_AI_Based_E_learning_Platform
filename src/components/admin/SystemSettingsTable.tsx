@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,85 +28,75 @@ import {
 import { Search, Plus, Pencil, Trash2 } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SystemSetting {
   id: string;
-  settingId: string;
-  settingName: string;
-  settingValue: string;
+  setting_id: string;
+  setting_title: string;
   category: string;
-  updatedAt: string;
+  updated_at: string;
 }
-
-const mockSettings: SystemSetting[] = [
-  {
-    id: "1",
-    settingId: "SET-001",
-    settingName: "Site Title",
-    settingValue: "Learning Twin Platform",
-    category: "General",
-    updatedAt: "2025-02-01 09:00:00",
-  },
-  {
-    id: "2",
-    settingId: "SET-002",
-    settingName: "Max Upload Size",
-    settingValue: "50MB",
-    category: "Storage",
-    updatedAt: "2025-02-01 10:30:00",
-  },
-  {
-    id: "3",
-    settingId: "SET-003",
-    settingName: "Session Timeout",
-    settingValue: "30 minutes",
-    category: "Security",
-    updatedAt: "2025-02-01 11:15:00",
-  },
-  {
-    id: "4",
-    settingId: "SET-004",
-    settingName: "Email Notifications",
-    settingValue: "Enabled",
-    category: "Notifications",
-    updatedAt: "2025-02-01 14:00:00",
-  },
-  {
-    id: "5",
-    settingId: "SET-005",
-    settingName: "Maintenance Mode",
-    settingValue: "Disabled",
-    category: "General",
-    updatedAt: "2025-02-01 16:45:00",
-  },
-];
 
 const categories = ["General", "Storage", "Security", "Notifications", "Performance"];
 
 export function SystemSettingsTable() {
-  const [settings, setSettings] = useState<SystemSetting[]>(mockSettings);
+  const [settings, setSettings] = useState<SystemSetting[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedSetting, setSelectedSetting] = useState<SystemSetting | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
-    settingId: "",
-    settingName: "",
-    settingValue: "",
+    setting_id: "",
+    setting_title: "",
     category: "",
   });
 
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("system_settings")
+        .select("*")
+        .order("setting_id", { ascending: true });
+
+      if (error) throw error;
+      setSettings(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to fetch settings",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
   const filteredSettings = settings.filter((setting) =>
-    setting.settingId.toLowerCase().includes(searchQuery.toLowerCase())
+    setting.setting_id.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const generateNextSettingId = () => {
+    const existingIds = settings.map(s => {
+      const match = s.setting_id.match(/SET-(\d+)/);
+      return match ? parseInt(match[1], 10) : 0;
+    });
+    const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
+    return `SET-${String(maxId + 1).padStart(3, "0")}`;
+  };
 
   const handleAddNew = () => {
     setIsEditMode(false);
     setFormData({
-      settingId: `SET-${String(settings.length + 1).padStart(3, "0")}`,
-      settingName: "",
-      settingValue: "",
+      setting_id: generateNextSettingId(),
+      setting_title: "",
       category: "",
     });
     setIsAddEditDialogOpen(true);
@@ -116,9 +106,8 @@ export function SystemSettingsTable() {
     setIsEditMode(true);
     setSelectedSetting(setting);
     setFormData({
-      settingId: setting.settingId,
-      settingName: setting.settingName,
-      settingValue: setting.settingValue,
+      setting_id: setting.setting_id,
+      setting_title: setting.setting_title,
       category: setting.category,
     });
     setIsAddEditDialogOpen(true);
@@ -129,58 +118,87 @@ export function SystemSettingsTable() {
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedSetting) {
-      setSettings(settings.filter((s) => s.id !== selectedSetting.id));
-      toast({
-        title: "Setting Deleted",
-        description: `Setting ${selectedSetting.settingId} has been deleted.`,
-      });
+      try {
+        const { error } = await supabase
+          .from("system_settings")
+          .delete()
+          .eq("id", selectedSetting.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Setting Deleted",
+          description: `Setting ${selectedSetting.setting_id} has been deleted.`,
+        });
+        fetchSettings();
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete setting",
+          variant: "destructive",
+        });
+      }
     }
     setIsDeleteDialogOpen(false);
     setSelectedSetting(null);
   };
 
-  const handleSave = () => {
-    const now = new Date().toISOString().replace("T", " ").slice(0, 19);
+  const handleSave = async () => {
+    try {
+      if (isEditMode && selectedSetting) {
+        const { error } = await supabase
+          .from("system_settings")
+          .update({
+            setting_id: formData.setting_id,
+            setting_title: formData.setting_title,
+            category: formData.category,
+            updated_at: new Date().toISOString().split('T')[0],
+          })
+          .eq("id", selectedSetting.id);
 
-    if (isEditMode && selectedSetting) {
-      setSettings(
-        settings.map((s) =>
-          s.id === selectedSetting.id
-            ? {
-                ...s,
-                settingId: formData.settingId,
-                settingName: formData.settingName,
-                settingValue: formData.settingValue,
-                category: formData.category,
-                updatedAt: now,
-              }
-            : s
-        )
-      );
+        if (error) throw error;
+
+        toast({
+          title: "Setting Updated",
+          description: `Setting ${formData.setting_id} has been updated.`,
+        });
+      } else {
+        const { error } = await supabase
+          .from("system_settings")
+          .insert({
+            setting_id: formData.setting_id,
+            setting_title: formData.setting_title,
+            category: formData.category,
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Setting Added",
+          description: `Setting ${formData.setting_id} has been added.`,
+        });
+      }
+      fetchSettings();
+      setIsAddEditDialogOpen(false);
+      setSelectedSetting(null);
+    } catch (error: any) {
       toast({
-        title: "Setting Updated",
-        description: `Setting ${formData.settingId} has been updated.`,
-      });
-    } else {
-      const newSetting: SystemSetting = {
-        id: String(Date.now()),
-        settingId: formData.settingId,
-        settingName: formData.settingName,
-        settingValue: formData.settingValue,
-        category: formData.category,
-        updatedAt: now,
-      };
-      setSettings([...settings, newSetting]);
-      toast({
-        title: "Setting Added",
-        description: `Setting ${formData.settingId} has been added.`,
+        title: "Error",
+        description: error.message || "Failed to save setting",
+        variant: "destructive",
       });
     }
-    setIsAddEditDialogOpen(false);
-    setSelectedSetting(null);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-muted-foreground">Loading settings...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -205,8 +223,7 @@ export function SystemSettingsTable() {
           <TableHeader>
             <TableRow>
               <TableHead>Setting ID</TableHead>
-              <TableHead>Setting Name</TableHead>
-              <TableHead>Setting Value</TableHead>
+              <TableHead>Setting Title</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Updated At</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -215,18 +232,17 @@ export function SystemSettingsTable() {
           <TableBody>
             {filteredSettings.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   No settings found.
                 </TableCell>
               </TableRow>
             ) : (
               filteredSettings.map((setting) => (
                 <TableRow key={setting.id}>
-                  <TableCell className="font-medium">{setting.settingId}</TableCell>
-                  <TableCell>{setting.settingName}</TableCell>
-                  <TableCell>{setting.settingValue}</TableCell>
+                  <TableCell className="font-medium">{setting.setting_id}</TableCell>
+                  <TableCell>{setting.setting_title}</TableCell>
                   <TableCell>{setting.category}</TableCell>
-                  <TableCell>{setting.updatedAt}</TableCell>
+                  <TableCell>{setting.updated_at}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Button
@@ -265,28 +281,22 @@ export function SystemSettingsTable() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="settingId">Setting ID</Label>
+              <Label htmlFor="setting_id">Setting ID</Label>
               <Input
-                id="settingId"
-                value={formData.settingId}
-                onChange={(e) => setFormData({ ...formData, settingId: e.target.value })}
+                id="setting_id"
+                value={formData.setting_id}
+                onChange={(e) => setFormData({ ...formData, setting_id: e.target.value })}
                 disabled={isEditMode}
+                maxLength={7}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="settingName">Setting Name</Label>
+              <Label htmlFor="setting_title">Setting Title</Label>
               <Input
-                id="settingName"
-                value={formData.settingName}
-                onChange={(e) => setFormData({ ...formData, settingName: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="settingValue">Setting Value</Label>
-              <Input
-                id="settingValue"
-                value={formData.settingValue}
-                onChange={(e) => setFormData({ ...formData, settingValue: e.target.value })}
+                id="setting_title"
+                value={formData.setting_title}
+                onChange={(e) => setFormData({ ...formData, setting_title: e.target.value })}
+                maxLength={20}
               />
             </div>
             <div className="grid gap-2">
@@ -323,7 +333,7 @@ export function SystemSettingsTable() {
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={confirmDelete}
         title="Delete Setting"
-        description={`Are you sure you want to delete setting "${selectedSetting?.settingId}"? This action cannot be undone.`}
+        description={`Are you sure you want to delete setting "${selectedSetting?.setting_id}"? This action cannot be undone.`}
       />
     </div>
   );
