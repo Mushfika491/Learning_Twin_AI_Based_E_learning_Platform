@@ -1,149 +1,161 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, Download } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Certificate {
-  certificateId: string;
-  courseId: string;
-  courseName: string;
-  issueDate: string;
-  expiryDate: string;
-  downloadableLink: string;
-  status: "Completed" | "Processing" | "Revoked";
+  display_id: string;
+  course_id: string;
+  course_title: string;
+  issue_date: string;
+  expiry_date: string;
+  status: string;
 }
-
-const mockCertificates: Certificate[] = [
-  {
-    certificateId: "CERT-001",
-    courseId: "CSE – 101",
-    courseName: "Introduction to Computer Science",
-    issueDate: "2024-01-15",
-    expiryDate: "2027-01-15",
-    downloadableLink: "https://certificates.learningtwin.com/cert-001.pdf",
-    status: "Completed",
-  },
-  {
-    certificateId: "CERT-002",
-    courseId: "CSE – 202",
-    courseName: "Data Structures and Algorithms",
-    issueDate: "2024-02-20",
-    expiryDate: "2027-02-20",
-    downloadableLink: "https://certificates.learningtwin.com/cert-002.pdf",
-    status: "Completed",
-  },
-  {
-    certificateId: "CERT-003",
-    courseId: "CSE – 305",
-    courseName: "Database Management Systems",
-    issueDate: "2024-03-10",
-    expiryDate: "2027-03-10",
-    downloadableLink: "https://certificates.learningtwin.com/cert-003.pdf",
-    status: "Processing",
-  },
-  {
-    certificateId: "CERT-004",
-    courseId: "CSE – 401",
-    courseName: "Machine Learning Fundamentals",
-    issueDate: "2024-04-05",
-    expiryDate: "2027-04-05",
-    downloadableLink: "https://certificates.learningtwin.com/cert-004.pdf",
-    status: "Completed",
-  },
-  {
-    certificateId: "CERT-005",
-    courseId: "CSE – 110",
-    courseName: "Web Development Basics",
-    issueDate: "2024-05-01",
-    expiryDate: "2027-05-01",
-    downloadableLink: "https://certificates.learningtwin.com/cert-005.pdf",
-    status: "Revoked",
-  },
-];
 
 export function Certificates({ userId }: { userId: string }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [certificates] = useState<Certificate[]>(mockCertificates);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchCertificates = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("certificates")
+        .select(`
+          display_id,
+          course_id,
+          issue_date,
+          expiry_date,
+          status,
+          courses (
+            title
+          )
+        `)
+        .eq("student_id", userId);
+
+      if (error) {
+        toast.error("Failed to fetch certificates");
+        console.error("Error fetching certificates:", error);
+        return;
+      }
+
+      const formattedCerts: Certificate[] = (data || []).map((cert: any) => ({
+        display_id: cert.display_id || "N/A",
+        course_id: cert.course_id,
+        course_title: cert.courses?.title || "Unknown Course",
+        issue_date: cert.issue_date,
+        expiry_date: cert.expiry_date,
+        status: cert.status || "Issued",
+      }));
+
+      setCertificates(formattedCerts);
+    } catch (err) {
+      console.error("Error:", err);
+      toast.error("An error occurred while fetching certificates");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (userId) {
+      fetchCertificates();
+    }
+  }, [userId]);
 
   const filteredCertificates = certificates.filter(cert =>
-    cert.certificateId.toLowerCase().includes(searchTerm.toLowerCase())
+    cert.course_id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Completed":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "Processing":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-      case "Revoked":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      default:
-        return "bg-muted text-muted-foreground";
-    }
+  const getStatusBadge = (status: string) => {
+    const isIssued = status.toLowerCase() === "issued";
+    return (
+      <Badge className={isIssued 
+        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" 
+        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+      }>
+        {status}
+      </Badge>
+    );
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString();
   };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Certificate Table</CardTitle>
-          <CardDescription>Your earned course completion certificates</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Certificate</CardTitle>
+              <CardDescription>Your earned course completion certificates</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={fetchCertificates} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="relative mb-4">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by Certificate ID..."
+              placeholder="Search by Course ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
             />
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Certificate ID</TableHead>
-                <TableHead>Course ID</TableHead>
-                <TableHead>Course Name</TableHead>
-                <TableHead>Issue Date</TableHead>
-                <TableHead>Expiry Date</TableHead>
-                <TableHead>Downloadable Link</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCertificates.map(cert => (
-                <TableRow key={cert.certificateId}>
-                  <TableCell>
-                    <code className="text-xs bg-muted px-2 py-1 rounded">
-                      {cert.certificateId}
-                    </code>
-                  </TableCell>
-                  <TableCell>{cert.courseId}</TableCell>
-                  <TableCell className="font-medium">{cert.courseName}</TableCell>
-                  <TableCell>{new Date(cert.issueDate).toLocaleDateString()}</TableCell>
-                  <TableCell>{new Date(cert.expiryDate).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Button size="sm" variant="outline" asChild>
-                      <a href={cert.downloadableLink} target="_blank" rel="noopener noreferrer">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </a>
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(cert.status)}>
-                      {cert.status}
-                    </Badge>
-                  </TableCell>
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading certificates...</div>
+          ) : filteredCertificates.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">No certificates found</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Certificate ID</TableHead>
+                  <TableHead>Course ID</TableHead>
+                  <TableHead>Course Title</TableHead>
+                  <TableHead>Issue Date</TableHead>
+                  <TableHead>Expiry Date</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredCertificates.map((cert, index) => (
+                  <TableRow key={cert.display_id || index}>
+                    <TableCell>
+                      <code className="text-xs bg-muted px-2 py-1 rounded">
+                        {cert.display_id}
+                      </code>
+                    </TableCell>
+                    <TableCell>
+                      <code className="text-xs bg-muted px-2 py-1 rounded">
+                        {cert.course_id.substring(0, 7)}
+                      </code>
+                    </TableCell>
+                    <TableCell className="font-medium max-w-[200px] truncate">
+                      {cert.course_title}
+                    </TableCell>
+                    <TableCell>{formatDate(cert.issue_date)}</TableCell>
+                    <TableCell>{formatDate(cert.expiry_date)}</TableCell>
+                    <TableCell>{getStatusBadge(cert.status)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
