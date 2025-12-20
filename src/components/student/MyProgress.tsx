@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -6,76 +6,66 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Search, Eye, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface PerformanceReport {
-  courseId: string;
-  perfReportId: string;
+  performance_report_id: string;
+  course_id: string;
   strengths: string;
   weakness: string;
   recommendations: string;
-  generatedAt: string;
+  generated_at: string;
 }
 
-// Mock data for Performance table
-const mockPerformance: PerformanceReport[] = [
-  {
-    courseId: "CSE – 101",
-    perfReportId: "PERF – 001",
-    strengths: "Strong problem-solving skills, excellent code structure",
-    weakness: "Time management during assignments",
-    recommendations: "Practice timed coding exercises",
-    generatedAt: "2024-01-15",
-  },
-  {
-    courseId: "CSE – 102",
-    perfReportId: "PERF – 002",
-    strengths: "Good understanding of data structures",
-    weakness: "Algorithm optimization techniques",
-    recommendations: "Focus on Big-O notation and optimization",
-    generatedAt: "2024-02-20",
-  },
-  {
-    courseId: "CSE – 103",
-    perfReportId: "PERF – 003",
-    strengths: "Creative UI designs, attention to detail",
-    weakness: "Responsive design implementation",
-    recommendations: "Study CSS flexbox and grid layouts",
-    generatedAt: "2024-03-10",
-  },
-  {
-    courseId: "CSE – 104",
-    perfReportId: "PERF – 004",
-    strengths: "Database normalization knowledge",
-    weakness: "Complex query optimization",
-    recommendations: "Practice advanced SQL queries",
-    generatedAt: "2024-03-25",
-  },
-  {
-    courseId: "CSE – 105",
-    perfReportId: "PERF – 005",
-    strengths: "Understanding of ML concepts",
-    weakness: "Model tuning and hyperparameters",
-    recommendations: "Experiment with different model configurations",
-    generatedAt: "2024-04-01",
-  },
-];
-
 export function MyProgress({ userId }: { userId: string }) {
-  const [performanceData, setPerformanceData] = useState<PerformanceReport[]>(mockPerformance);
+  const [performanceData, setPerformanceData] = useState<PerformanceReport[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [viewingReport, setViewingReport] = useState<PerformanceReport | null>(null);
+  const { toast } = useToast();
 
-  const fetchProgress = async () => {
+  const fetchPerformanceReports = async () => {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-    }, 500);
+    try {
+      // Fetch performance reports for the current user
+      const { data, error } = await supabase
+        .from("performance_reports")
+        .select("performance_report_id, course_id, strengths, weakness, recommendations, generated_at")
+        .order("generated_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching performance reports:", error);
+        toast({ title: "Error", description: "Failed to fetch performance reports", variant: "destructive" });
+      } else {
+        // Get the courses from student_courses to align with course titles
+        const { data: coursesData } = await supabase
+          .from("student_courses")
+          .select("course_id");
+
+        const courseIds = coursesData?.map(c => c.course_id.trim()) || [];
+        
+        // Filter reports to only show those matching courses in student_courses
+        const filteredReports = (data || []).filter(report => 
+          courseIds.includes(report.course_id.trim())
+        );
+        
+        setPerformanceData(filteredReports);
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      toast({ title: "Error", description: "An unexpected error occurred", variant: "destructive" });
+    }
+    setLoading(false);
   };
 
+  useEffect(() => {
+    if (userId) {
+      fetchPerformanceReports();
+    }
+  }, [userId]);
+
   const filteredPerformance = performanceData.filter(p =>
-    p.courseId.toLowerCase().includes(searchTerm.toLowerCase())
+    p.course_id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -87,7 +77,7 @@ export function MyProgress({ userId }: { userId: string }) {
               <CardTitle>Performance</CardTitle>
               <CardDescription>Track your learning performance across courses</CardDescription>
             </div>
-            <Button onClick={fetchProgress} disabled={loading}>
+            <Button onClick={fetchPerformanceReports} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
@@ -107,74 +97,86 @@ export function MyProgress({ userId }: { userId: string }) {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Performance Report</TableHead>
                 <TableHead>Course ID</TableHead>
-                <TableHead>Perf Report ID</TableHead>
                 <TableHead>Strengths</TableHead>
                 <TableHead>Weakness</TableHead>
                 <TableHead>Recommendations</TableHead>
                 <TableHead>Generated At</TableHead>
-                <TableHead>Action</TableHead>
+                <TableHead>Summary</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPerformance.map(item => (
-                <TableRow key={item.perfReportId}>
-                  <TableCell>
-                    <Badge variant="outline">{item.courseId}</Badge>
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">{item.perfReportId}</TableCell>
-                  <TableCell className="max-w-[150px] truncate" title={item.strengths}>
-                    {item.strengths}
-                  </TableCell>
-                  <TableCell className="max-w-[150px] truncate" title={item.weakness}>
-                    {item.weakness}
-                  </TableCell>
-                  <TableCell className="max-w-[150px] truncate" title={item.recommendations}>
-                    {item.recommendations}
-                  </TableCell>
-                  <TableCell>{new Date(item.generatedAt).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" onClick={() => setViewingReport(item)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Performance Report Details</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Course ID</p>
-                            <p className="font-semibold">{item.courseId}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Perf Report ID</p>
-                            <p className="font-semibold">{item.perfReportId}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Strengths</p>
-                            <p>{item.strengths}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Weakness</p>
-                            <p>{item.weakness}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Recommendations</p>
-                            <p>{item.recommendations}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground">Generated At</p>
-                            <p>{new Date(item.generatedAt).toLocaleDateString()}</p>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+              {filteredPerformance.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    No performance reports found
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                filteredPerformance.map(item => (
+                  <TableRow key={item.performance_report_id}>
+                    <TableCell className="font-mono text-xs">
+                      <Badge variant="secondary">{item.performance_report_id.trim()}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{item.course_id.trim()}</Badge>
+                    </TableCell>
+                    <TableCell className="max-w-[150px] truncate" title={item.strengths}>
+                      {item.strengths}
+                    </TableCell>
+                    <TableCell className="max-w-[150px] truncate" title={item.weakness}>
+                      {item.weakness}
+                    </TableCell>
+                    <TableCell className="max-w-[150px] truncate" title={item.recommendations}>
+                      {item.recommendations}
+                    </TableCell>
+                    <TableCell>{new Date(item.generated_at).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Performance Report Summary</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-sm font-medium text-muted-foreground">Perf ID</p>
+                                <p className="font-semibold">{item.performance_report_id.trim()}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-muted-foreground">Course ID</p>
+                                <p className="font-semibold">{item.course_id.trim()}</p>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Strengths</p>
+                              <p className="bg-muted/50 p-3 rounded-md mt-1">{item.strengths}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Weakness</p>
+                              <p className="bg-muted/50 p-3 rounded-md mt-1">{item.weakness}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Recommendations</p>
+                              <p className="bg-muted/50 p-3 rounded-md mt-1">{item.recommendations}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Generated At</p>
+                              <p className="font-semibold">{new Date(item.generated_at).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
