@@ -23,24 +23,29 @@ interface StudentCourse {
 }
 
 interface Assessment {
-  assessmentId: string;
-  assessmentType: string;
-  assessmentTitle: string;
-  obtainedMark: number;
-  totalMarks: number;
-  dueDateTime: string;
-  performanceLevel: string;
-  feedback: string;
-  status: string;
+  id: string;
+  assessment_id: string;
+  student_id: string;
+  assessment_type: string;
+  assessment_title: string;
+  obtained_mark: number;
+  total_marks: number;
+  due_date_time: string | null;
+  performance_level: string | null;
+  feedback: string | null;
+  status: string | null;
+  created_at: string | null;
 }
 
 interface Question {
-  assessmentId: string;
-  questionNumber: number;
-  questionType: string;
-  questionText: string;
-  category: string;
-  correctAnswer: string;
+  id: string;
+  assessment_id: string;
+  question_number: number;
+  question_type: string;
+  question_text: string;
+  category: string | null;
+  correct_answer: string | null;
+  created_at: string | null;
 }
 
 interface Submission {
@@ -51,33 +56,19 @@ interface Submission {
 }
 
 const mockSubmissions: Submission[] = [
-  { assessmentId: "ASM – 001", studentId: "STU – 001", answer: "A variable is a named storage location in memory that holds data values.", status: "Submitted" },
-  { assessmentId: "ASM – 002", studentId: "STU – 001", answer: "Implemented linked list with insert, delete, and traverse operations using Node class.", status: "Submitted" },
-  { assessmentId: "ASM – 003", studentId: "STU – 001", answer: "", status: "Not Submitted" },
-  { assessmentId: "ASM – 004", studentId: "STU – 001", answer: "Created responsive website with HTML5, CSS3, and JavaScript including mobile navigation.", status: "Submitted" },
-  { assessmentId: "ASM – 005", studentId: "STU – 001", answer: "Time complexity analysis: O(n log n) for merge sort, O(n²) for bubble sort.", status: "Submitted" },
-];
-
-const mockAssessments: Assessment[] = [
-  { assessmentId: "ASM – 001", assessmentType: "Quiz", assessmentTitle: "Programming Basics Quiz", obtainedMark: 85, totalMarks: 100, dueDateTime: "2024-02-10 23:59", performanceLevel: "Excellent", feedback: "Great understanding of core concepts", status: "Graded" },
-  { assessmentId: "ASM – 002", assessmentType: "Assignment", assessmentTitle: "Data Structures Assignment 1", obtainedMark: 72, totalMarks: 80, dueDateTime: "2024-02-15 23:59", performanceLevel: "Good", feedback: "Well structured code, minor improvements needed", status: "Graded" },
-  { assessmentId: "ASM – 003", assessmentType: "Quiz", assessmentTitle: "SQL Fundamentals Quiz", obtainedMark: 0, totalMarks: 50, dueDateTime: "2024-02-20 23:59", performanceLevel: "Pending", feedback: "Not yet submitted", status: "Not Submitted" },
-  { assessmentId: "ASM – 004", assessmentType: "Assignment", assessmentTitle: "Web Development Project", obtainedMark: 45, totalMarks: 50, dueDateTime: "2024-02-25 23:59", performanceLevel: "Excellent", feedback: "Outstanding work with responsive design", status: "Graded" },
-  { assessmentId: "ASM – 005", assessmentType: "Quiz", assessmentTitle: "Algorithm Analysis Quiz", obtainedMark: 0, totalMarks: 100, dueDateTime: "2024-03-01 23:59", performanceLevel: "Pending", feedback: "Awaiting grading", status: "Submitted" },
-];
-
-const mockQuestions: Question[] = [
-  { assessmentId: "ASM – 001", questionNumber: 1, questionType: "MCQ", questionText: "What is a variable in programming?", category: "Basics", correctAnswer: "A named storage location in memory" },
-  { assessmentId: "ASM – 001", questionNumber: 2, questionType: "Short Q", questionText: "Explain the difference between int and float data types", category: "Data Types", correctAnswer: "Int stores whole numbers, float stores decimal numbers" },
-  { assessmentId: "ASM – 002", questionNumber: 1, questionType: "MCQ", questionText: "Which data structure uses LIFO principle?", category: "Data Structures", correctAnswer: "Stack" },
-  { assessmentId: "ASM – 003", questionNumber: 1, questionType: "Short Q", questionText: "Write a SQL query to select all records from a table", category: "SQL Basics", correctAnswer: "SELECT * FROM table_name" },
-  { assessmentId: "ASM – 004", questionNumber: 1, questionType: "MCQ", questionText: "What does HTML stand for?", category: "Web Basics", correctAnswer: "HyperText Markup Language" },
+  { assessmentId: "ASM-001", studentId: "STU-001", answer: "A variable is a named storage location in memory that holds data values.", status: "Submitted" },
+  { assessmentId: "ASM-002", studentId: "STU-001", answer: "Implemented linked list with insert, delete, and traverse operations using Node class.", status: "Submitted" },
+  { assessmentId: "ASM-003", studentId: "STU-001", answer: "", status: "Not Submitted" },
 ];
 
 export function Resources({ userId }: { userId: string }) {
   const [activeTab, setActiveTab] = useState("course-materials");
   const [courses, setCourses] = useState<StudentCourse[]>([]);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assessmentsLoading, setAssessmentsLoading] = useState(true);
+  const [questionsLoading, setQuestionsLoading] = useState(true);
   const [courseSearch, setCourseSearch] = useState("");
   const [assessmentSearch, setAssessmentSearch] = useState("");
   const [questionSearch, setQuestionSearch] = useState("");
@@ -91,11 +82,30 @@ export function Resources({ userId }: { userId: string }) {
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false);
   const [courseDialogOpen, setCourseDialogOpen] = useState(false);
   const [addSubmissionDialogOpen, setAddSubmissionDialogOpen] = useState(false);
+  const [addAssessmentDialogOpen, setAddAssessmentDialogOpen] = useState(false);
+  const [addQuestionDialogOpen, setAddQuestionDialogOpen] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>(mockSubmissions);
   const [newSubmission, setNewSubmission] = useState({ studentId: "", assessmentId: "", answer: "" });
+  const [newAssessment, setNewAssessment] = useState({
+    assessment_id: "",
+    assessment_type: "Quiz",
+    assessment_title: "",
+    total_marks: 100,
+    due_date_time: "",
+  });
+  const [newQuestion, setNewQuestion] = useState({
+    assessment_id: "",
+    question_number: 1,
+    question_type: "MCQ",
+    question_text: "",
+    category: "",
+    correct_answer: "",
+  });
 
   useEffect(() => {
     fetchCourses();
+    fetchAssessments();
+    fetchQuestions();
   }, []);
 
   const fetchCourses = async () => {
@@ -111,6 +121,129 @@ export function Resources({ userId }: { userId: string }) {
       setCourses(data || []);
     }
     setLoading(false);
+  };
+
+  const fetchAssessments = async () => {
+    setAssessmentsLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      setAssessmentsLoading(false);
+      return;
+    }
+    
+    const { data, error } = await supabase
+      .from("student_assessments")
+      .select("*")
+      .eq("student_id", session.user.id)
+      .order("created_at", { ascending: false });
+    
+    if (error) {
+      console.error("Fetch assessments error:", error);
+      toast({ title: "Error", description: "Failed to fetch assessments", variant: "destructive" });
+    } else {
+      setAssessments(data || []);
+    }
+    setAssessmentsLoading(false);
+  };
+
+  const fetchQuestions = async () => {
+    setQuestionsLoading(true);
+    const { data, error } = await supabase
+      .from("assessment_questions")
+      .select("*")
+      .order("assessment_id", { ascending: true });
+    
+    if (error) {
+      console.error("Fetch questions error:", error);
+      toast({ title: "Error", description: "Failed to fetch questions", variant: "destructive" });
+    } else {
+      setQuestions(data || []);
+    }
+    setQuestionsLoading(false);
+  };
+
+  const handleAddAssessment = async () => {
+    if (!newAssessment.assessment_id || !newAssessment.assessment_title) {
+      toast({ title: "Error", description: "Please fill required fields", variant: "destructive" });
+      return;
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      toast({ title: "Error", description: "You must be logged in", variant: "destructive" });
+      return;
+    }
+
+    const { error } = await supabase.from("student_assessments").insert({
+      assessment_id: newAssessment.assessment_id,
+      student_id: session.user.id,
+      assessment_type: newAssessment.assessment_type,
+      assessment_title: newAssessment.assessment_title,
+      total_marks: newAssessment.total_marks,
+      due_date_time: newAssessment.due_date_time || null,
+    });
+
+    if (error) {
+      console.error("Add assessment error:", error);
+      toast({ title: "Error", description: "Failed to add assessment: " + error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Assessment added successfully" });
+      setAddAssessmentDialogOpen(false);
+      setNewAssessment({ assessment_id: "", assessment_type: "Quiz", assessment_title: "", total_marks: 100, due_date_time: "" });
+      fetchAssessments();
+    }
+  };
+
+  const handleAddQuestion = async () => {
+    if (!newQuestion.assessment_id || !newQuestion.question_text) {
+      toast({ title: "Error", description: "Please fill required fields", variant: "destructive" });
+      return;
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      toast({ title: "Error", description: "You must be logged in", variant: "destructive" });
+      return;
+    }
+
+    const { error } = await supabase.from("assessment_questions").insert({
+      assessment_id: newQuestion.assessment_id,
+      question_number: newQuestion.question_number,
+      question_type: newQuestion.question_type,
+      question_text: newQuestion.question_text,
+      category: newQuestion.category || null,
+      correct_answer: newQuestion.correct_answer || null,
+    });
+
+    if (error) {
+      console.error("Add question error:", error);
+      toast({ title: "Error", description: "Failed to add question: " + error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Question added successfully" });
+      setAddQuestionDialogOpen(false);
+      setNewQuestion({ assessment_id: "", question_number: 1, question_type: "MCQ", question_text: "", category: "", correct_answer: "" });
+      fetchQuestions();
+    }
+  };
+
+  const handleDeleteAssessment = async (id: string) => {
+    const { error } = await supabase.from("student_assessments").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: "Failed to delete assessment", variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Assessment deleted" });
+      fetchAssessments();
+    }
+  };
+
+  const handleDeleteQuestion = async (id: string) => {
+    const { error } = await supabase.from("assessment_questions").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: "Failed to delete question", variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Question deleted" });
+      fetchQuestions();
+    }
   };
 
   const handleViewCourse = (course: StudentCourse) => {
@@ -172,12 +305,12 @@ export function Resources({ userId }: { userId: string }) {
     course.course_id.toLowerCase().includes(courseSearch.toLowerCase())
   );
 
-  const filteredAssessments = mockAssessments.filter(item =>
-    item.assessmentId.toLowerCase().includes(assessmentSearch.toLowerCase())
+  const filteredAssessments = assessments.filter(item =>
+    item.assessment_id.toLowerCase().includes(assessmentSearch.toLowerCase())
   );
 
-  const filteredQuestions = mockQuestions.filter(item =>
-    item.assessmentId.toLowerCase().includes(questionSearch.toLowerCase())
+  const filteredQuestions = questions.filter(item =>
+    item.assessment_id.toLowerCase().includes(questionSearch.toLowerCase())
   );
 
   const filteredSubmissions = submissions.filter(item =>
@@ -268,9 +401,14 @@ export function Resources({ userId }: { userId: string }) {
         <TabsContent value="my-assessments" className="space-y-6 mt-6">
           {/* Assessment Table */}
           <Card>
-            <CardHeader>
-              <CardTitle>Assessment</CardTitle>
-              <CardDescription>Your quizzes and assignments with grades</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Assessment</CardTitle>
+                <CardDescription>Your quizzes and assignments with grades</CardDescription>
+              </div>
+              <Button size="sm" onClick={() => setAddAssessmentDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Add Assessment
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="flex gap-4 mb-4">
@@ -284,60 +422,79 @@ export function Resources({ userId }: { userId: string }) {
                   />
                 </div>
               </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Assessment ID</TableHead>
-                    <TableHead>Assessment Type</TableHead>
-                    <TableHead>Assessment Title</TableHead>
-                    <TableHead>Obtained Mark</TableHead>
-                    <TableHead>Total Marks</TableHead>
-                    <TableHead>Due Date & Time</TableHead>
-                    <TableHead>Performance Level</TableHead>
-                    <TableHead>Feedback</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Details</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAssessments.map((assessment) => (
-                    <TableRow key={assessment.assessmentId}>
-                      <TableCell className="font-medium">{assessment.assessmentId}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{assessment.assessmentType}</Badge>
-                      </TableCell>
-                      <TableCell>{assessment.assessmentTitle}</TableCell>
-                      <TableCell>{assessment.obtainedMark}</TableCell>
-                      <TableCell>{assessment.totalMarks}</TableCell>
-                      <TableCell>{assessment.dueDateTime}</TableCell>
-                      <TableCell>
-                        <Badge className={getPerformanceColor(assessment.performanceLevel)}>
-                          {assessment.performanceLevel}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate">{assessment.feedback}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(assessment.status)}>
-                          {assessment.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button size="sm" variant="ghost" onClick={() => handleViewAssessment(assessment)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              {assessmentsLoading ? (
+                <p className="text-center text-muted-foreground py-4">Loading assessments...</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Assessment ID</TableHead>
+                      <TableHead>Assessment Type</TableHead>
+                      <TableHead>Assessment Title</TableHead>
+                      <TableHead>Obtained Mark</TableHead>
+                      <TableHead>Total Marks</TableHead>
+                      <TableHead>Due Date & Time</TableHead>
+                      <TableHead>Performance Level</TableHead>
+                      <TableHead>Feedback</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAssessments.map((assessment) => (
+                      <TableRow key={assessment.id}>
+                        <TableCell className="font-medium">{assessment.assessment_id}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{assessment.assessment_type}</Badge>
+                        </TableCell>
+                        <TableCell>{assessment.assessment_title}</TableCell>
+                        <TableCell>{assessment.obtained_mark}</TableCell>
+                        <TableCell>{assessment.total_marks}</TableCell>
+                        <TableCell>{assessment.due_date_time || "N/A"}</TableCell>
+                        <TableCell>
+                          <Badge className={getPerformanceColor(assessment.performance_level || "Pending")}>
+                            {assessment.performance_level || "Pending"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate">{assessment.feedback || "N/A"}</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(assessment.status || "Not Submitted")}>
+                            {assessment.status || "Not Submitted"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="flex gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => handleViewAssessment(assessment)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDeleteAssessment(assessment.id)}>
+                            ✕
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredAssessments.length === 0 && !assessmentsLoading && (
+                      <TableRow>
+                        <TableCell colSpan={10} className="text-center text-muted-foreground py-4">
+                          No assessments found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
 
           {/* Questions Table */}
           <Card>
-            <CardHeader>
-              <CardTitle>Questions</CardTitle>
-              <CardDescription>Questions from your assessments</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Questions</CardTitle>
+                <CardDescription>Questions from your assessments</CardDescription>
+              </div>
+              <Button size="sm" onClick={() => setAddQuestionDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Add Question
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="flex gap-4 mb-4">
@@ -351,38 +508,52 @@ export function Resources({ userId }: { userId: string }) {
                   />
                 </div>
               </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Assessment ID</TableHead>
-                    <TableHead>Question Number</TableHead>
-                    <TableHead>Question Type</TableHead>
-                    <TableHead>Question Text</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Correct Answer</TableHead>
-                    <TableHead>Details</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredQuestions.map((question, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{question.assessmentId}</TableCell>
-                      <TableCell>{question.questionNumber}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{question.questionType}</Badge>
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate">{question.questionText}</TableCell>
-                      <TableCell>{question.category}</TableCell>
-                      <TableCell className="max-w-xs truncate">{question.correctAnswer}</TableCell>
-                      <TableCell>
-                        <Button size="sm" variant="ghost" onClick={() => handleViewQuestion(question)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              {questionsLoading ? (
+                <p className="text-center text-muted-foreground py-4">Loading questions...</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Assessment ID</TableHead>
+                      <TableHead>Question Number</TableHead>
+                      <TableHead>Question Type</TableHead>
+                      <TableHead>Question Text</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Correct Answer</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredQuestions.map((question) => (
+                      <TableRow key={question.id}>
+                        <TableCell className="font-medium">{question.assessment_id}</TableCell>
+                        <TableCell>{question.question_number}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{question.question_type}</Badge>
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate">{question.question_text}</TableCell>
+                        <TableCell>{question.category || "N/A"}</TableCell>
+                        <TableCell className="max-w-xs truncate">{question.correct_answer || "N/A"}</TableCell>
+                        <TableCell className="flex gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => handleViewQuestion(question)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDeleteQuestion(question.id)}>
+                            ✕
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredQuestions.length === 0 && !questionsLoading && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-4">
+                          No questions found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -497,46 +668,46 @@ export function Resources({ userId }: { userId: string }) {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Assessment Details</DialogTitle>
-            <DialogDescription>Full summary of assessment {selectedAssessment?.assessmentId}</DialogDescription>
+            <DialogDescription>Full summary of assessment {selectedAssessment?.assessment_id}</DialogDescription>
           </DialogHeader>
           {selectedAssessment && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Assessment ID</p>
-                  <p className="font-medium">{selectedAssessment.assessmentId}</p>
+                  <p className="font-medium">{selectedAssessment.assessment_id}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Assessment Type</p>
-                  <p className="font-medium">{selectedAssessment.assessmentType}</p>
+                  <p className="font-medium">{selectedAssessment.assessment_type}</p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-sm text-muted-foreground">Assessment Title</p>
-                  <p className="font-medium">{selectedAssessment.assessmentTitle}</p>
+                  <p className="font-medium">{selectedAssessment.assessment_title}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Obtained Mark</p>
-                  <p className="font-medium">{selectedAssessment.obtainedMark} / {selectedAssessment.totalMarks}</p>
+                  <p className="font-medium">{selectedAssessment.obtained_mark} / {selectedAssessment.total_marks}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Due Date & Time</p>
-                  <p className="font-medium">{selectedAssessment.dueDateTime}</p>
+                  <p className="font-medium">{selectedAssessment.due_date_time || "N/A"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Performance Level</p>
-                  <Badge className={getPerformanceColor(selectedAssessment.performanceLevel)}>
-                    {selectedAssessment.performanceLevel}
+                  <Badge className={getPerformanceColor(selectedAssessment.performance_level || "Pending")}>
+                    {selectedAssessment.performance_level || "Pending"}
                   </Badge>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <Badge className={getStatusColor(selectedAssessment.status)}>
-                    {selectedAssessment.status}
+                  <Badge className={getStatusColor(selectedAssessment.status || "Not Submitted")}>
+                    {selectedAssessment.status || "Not Submitted"}
                   </Badge>
                 </div>
                 <div className="col-span-2">
                   <p className="text-sm text-muted-foreground">Feedback</p>
-                  <p className="font-medium bg-muted p-3 rounded-md">{selectedAssessment.feedback}</p>
+                  <p className="font-medium bg-muted p-3 rounded-md">{selectedAssessment.feedback || "No feedback yet"}</p>
                 </div>
               </div>
             </div>
@@ -549,34 +720,34 @@ export function Resources({ userId }: { userId: string }) {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Question Details</DialogTitle>
-            <DialogDescription>Full summary of question from {selectedQuestion?.assessmentId}</DialogDescription>
+            <DialogDescription>Full summary of question from {selectedQuestion?.assessment_id}</DialogDescription>
           </DialogHeader>
           {selectedQuestion && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Assessment ID</p>
-                  <p className="font-medium">{selectedQuestion.assessmentId}</p>
+                  <p className="font-medium">{selectedQuestion.assessment_id}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Question Number</p>
-                  <p className="font-medium">{selectedQuestion.questionNumber}</p>
+                  <p className="font-medium">{selectedQuestion.question_number}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Question Type</p>
-                  <Badge variant="outline">{selectedQuestion.questionType}</Badge>
+                  <Badge variant="outline">{selectedQuestion.question_type}</Badge>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Category</p>
-                  <p className="font-medium">{selectedQuestion.category}</p>
+                  <p className="font-medium">{selectedQuestion.category || "N/A"}</p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-sm text-muted-foreground">Question Text</p>
-                  <p className="font-medium bg-muted p-3 rounded-md">{selectedQuestion.questionText}</p>
+                  <p className="font-medium bg-muted p-3 rounded-md">{selectedQuestion.question_text}</p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-sm text-muted-foreground">Correct Answer</p>
-                  <p className="font-medium bg-green-500/10 p-3 rounded-md border border-green-500/20">{selectedQuestion.correctAnswer}</p>
+                  <p className="font-medium bg-green-500/10 p-3 rounded-md border border-green-500/20">{selectedQuestion.correct_answer || "N/A"}</p>
                 </div>
               </div>
             </div>
@@ -658,6 +829,141 @@ export function Resources({ userId }: { userId: string }) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddSubmissionDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleAddSubmission}>Submit</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Assessment Dialog */}
+      <Dialog open={addAssessmentDialogOpen} onOpenChange={setAddAssessmentDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add New Assessment</DialogTitle>
+            <DialogDescription>Create a new assessment entry</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="assessmentIdNew">Assessment ID</Label>
+              <Input
+                id="assessmentIdNew"
+                placeholder="Enter Assessment ID (e.g., ASM-001)"
+                value={newAssessment.assessment_id}
+                onChange={(e) => setNewAssessment({ ...newAssessment, assessment_id: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="assessmentType">Assessment Type</Label>
+              <Input
+                id="assessmentType"
+                placeholder="Quiz, Assignment, etc."
+                value={newAssessment.assessment_type}
+                onChange={(e) => setNewAssessment({ ...newAssessment, assessment_type: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="assessmentTitle">Assessment Title</Label>
+              <Input
+                id="assessmentTitle"
+                placeholder="Enter assessment title"
+                value={newAssessment.assessment_title}
+                onChange={(e) => setNewAssessment({ ...newAssessment, assessment_title: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="totalMarks">Total Marks</Label>
+              <Input
+                id="totalMarks"
+                type="number"
+                placeholder="100"
+                value={newAssessment.total_marks}
+                onChange={(e) => setNewAssessment({ ...newAssessment, total_marks: parseInt(e.target.value) || 100 })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dueDateTime">Due Date & Time</Label>
+              <Input
+                id="dueDateTime"
+                type="datetime-local"
+                value={newAssessment.due_date_time}
+                onChange={(e) => setNewAssessment({ ...newAssessment, due_date_time: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddAssessmentDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddAssessment}>Add Assessment</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Question Dialog */}
+      <Dialog open={addQuestionDialogOpen} onOpenChange={setAddQuestionDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add New Question</DialogTitle>
+            <DialogDescription>Create a new question for an assessment</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="questionAssessmentId">Assessment ID</Label>
+              <Input
+                id="questionAssessmentId"
+                placeholder="Enter Assessment ID (e.g., ASM-001)"
+                value={newQuestion.assessment_id}
+                onChange={(e) => setNewQuestion({ ...newQuestion, assessment_id: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="questionNumber">Question Number</Label>
+              <Input
+                id="questionNumber"
+                type="number"
+                placeholder="1"
+                value={newQuestion.question_number}
+                onChange={(e) => setNewQuestion({ ...newQuestion, question_number: parseInt(e.target.value) || 1 })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="questionType">Question Type</Label>
+              <Input
+                id="questionType"
+                placeholder="MCQ, Short Q, etc."
+                value={newQuestion.question_type}
+                onChange={(e) => setNewQuestion({ ...newQuestion, question_type: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="questionText">Question Text</Label>
+              <Textarea
+                id="questionText"
+                placeholder="Enter question text..."
+                value={newQuestion.question_text}
+                onChange={(e) => setNewQuestion({ ...newQuestion, question_text: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="questionCategory">Category</Label>
+              <Input
+                id="questionCategory"
+                placeholder="Enter category"
+                value={newQuestion.category}
+                onChange={(e) => setNewQuestion({ ...newQuestion, category: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="correctAnswer">Correct Answer</Label>
+              <Textarea
+                id="correctAnswer"
+                placeholder="Enter correct answer..."
+                value={newQuestion.correct_answer}
+                onChange={(e) => setNewQuestion({ ...newQuestion, correct_answer: e.target.value })}
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddQuestionDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddQuestion}>Add Question</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
