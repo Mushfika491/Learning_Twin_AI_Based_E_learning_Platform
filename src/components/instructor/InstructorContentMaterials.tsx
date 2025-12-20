@@ -41,34 +41,37 @@ interface Question {
   assessment_id: string;
   question_number: number;
   question_type: string;
-  category: string;
+  category: string | null;
   question_text: string;
-  correct_answer: string;
-  upload_time: string;
+  correct_answer: string | null;
+  course_id: string | null;
+  created_at: string | null;
 }
 
 interface Assignment {
   id: string;
-  title: string;
-  assessment_id: string;
-  points: number;
-  due_date_time: string;
-  upload_time: string;
-  rubrics: string;
-  topic: string;
-}
-
-interface StudentAssessmentAnswer {
-  id: string;
-  student_name: string;
   student_id: string;
-  assessment_title: string;
   assessment_id: string;
   assessment_type: string;
-  due_date_time: string;
-  marks: number;
-  submitted_time: string;
-  answers: string;
+  assessment_title: string;
+  course_id: string | null;
+  total_marks: number;
+  obtained_mark: number | null;
+  due_date_time: string | null;
+  status: string | null;
+  performance_level: string | null;
+  feedback: string | null;
+  created_at: string | null;
+}
+
+interface StudentSubmission {
+  id: string;
+  student_id: string;
+  assessment_id: string;
+  answer: string;
+  status: string;
+  created_at: string | null;
+  student_name?: string;
 }
 
 export function InstructorContentMaterials() {
@@ -77,13 +80,14 @@ export function InstructorContentMaterials() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [studentAnswers, setStudentAnswers] = useState<StudentAssessmentAnswer[]>([]);
+  const [studentSubmissions, setStudentSubmissions] = useState<StudentSubmission[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const [materialSearchTerm, setMaterialSearchTerm] = useState("");
   const [quizSearchTerm, setQuizSearchTerm] = useState("");
   const [questionSearchTerm, setQuestionSearchTerm] = useState("");
   const [assignmentSearchTerm, setAssignmentSearchTerm] = useState("");
-  const [studentAnswerSearchTerm, setStudentAnswerSearchTerm] = useState("");
+  const [submissionSearchTerm, setSubmissionSearchTerm] = useState("");
   
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
   const [isContentDialogOpen, setIsContentDialogOpen] = useState(false);
@@ -106,7 +110,7 @@ export function InstructorContentMaterials() {
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
-  const [selectedStudentAnswer, setSelectedStudentAnswer] = useState<StudentAssessmentAnswer | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<StudentSubmission | null>(null);
   
   const { toast } = useToast();
 
@@ -128,106 +132,104 @@ export function InstructorContentMaterials() {
   const [questionForm, setQuestionForm] = useState({
     assessment_id: "",
     question_number: 1,
-    question_type: "multiple_choice",
+    question_type: "MCQ",
     category: "",
     question_text: "",
     correct_answer: "",
+    course_id: "",
   });
 
   const [assignmentForm, setAssignmentForm] = useState({
-    title: "",
     assessment_id: "",
-    points: 100,
+    assessment_title: "",
+    assessment_type: "Assignment",
+    course_id: "",
+    total_marks: 100,
     due_date_time: "",
-    rubrics: "",
-    topic: "",
+    student_id: "00000000-0000-0000-0000-000000000000",
   });
-
-  // Mock data for demonstration (5 rows each)
-  const mockQuestions: Question[] = [
-    { id: "QST-001", assessment_id: "ASM-001", question_number: 1, question_type: "Multiple Choice", category: "Programming Basics", question_text: "What is the correct syntax to declare a variable in Python?", correct_answer: "variable_name = value", upload_time: "2025-01-15T09:00:00Z" },
-    { id: "QST-002", assessment_id: "ASM-001", question_number: 2, question_type: "True/False", category: "Data Types", question_text: "In Python, strings are mutable.", correct_answer: "False", upload_time: "2025-01-15T09:15:00Z" },
-    { id: "QST-003", assessment_id: "ASM-002", question_number: 1, question_type: "Short Answer", category: "Functions", question_text: "What keyword is used to define a function in JavaScript?", correct_answer: "function", upload_time: "2025-01-16T10:00:00Z" },
-    { id: "QST-004", assessment_id: "ASM-002", question_number: 2, question_type: "Multiple Choice", category: "Arrays", question_text: "Which method adds an element to the end of an array?", correct_answer: "push()", upload_time: "2025-01-16T10:30:00Z" },
-    { id: "QST-005", assessment_id: "ASM-003", question_number: 1, question_type: "Essay", category: "Data Analysis", question_text: "Explain the difference between supervised and unsupervised learning.", correct_answer: "Supervised uses labeled data...", upload_time: "2025-01-17T14:00:00Z" },
-  ];
-
-  const mockAssignments: Assignment[] = [
-    { id: "ASG-001", title: "Python Variables Practice", assessment_id: "ASM-001", points: 50, due_date_time: "2025-01-25T23:59:00", upload_time: "2025-01-15T08:00:00Z", rubrics: "Correct syntax, variable naming conventions, code readability", topic: "Variables & Data Types" },
-    { id: "ASG-002", title: "JavaScript Functions Project", assessment_id: "ASM-002", points: 100, due_date_time: "2025-01-28T23:59:00", upload_time: "2025-01-16T09:00:00Z", rubrics: "Function implementation, error handling, documentation", topic: "Functions & Methods" },
-    { id: "ASG-003", title: "Data Visualization Report", assessment_id: "ASM-003", points: 75, due_date_time: "2025-02-01T23:59:00", upload_time: "2025-01-17T11:00:00Z", rubrics: "Chart accuracy, insights quality, presentation", topic: "Data Visualization" },
-    { id: "ASG-004", title: "React Component Building", assessment_id: "ASM-004", points: 80, due_date_time: "2025-02-05T23:59:00", upload_time: "2025-01-18T10:00:00Z", rubrics: "Component structure, state management, props usage", topic: "React Components" },
-    { id: "ASG-005", title: "ML Model Training Exercise", assessment_id: "ASM-005", points: 120, due_date_time: "2025-02-10T23:59:00", upload_time: "2025-01-19T13:00:00Z", rubrics: "Model accuracy, feature selection, documentation", topic: "Machine Learning" },
-  ];
-
-  const mockStudentAnswers: StudentAssessmentAnswer[] = [
-    { id: "SAS-001", student_name: "Alice Johnson", student_id: "STU-001", assessment_title: "Python Variables Practice", assessment_id: "ASM-001", assessment_type: "Assignment", due_date_time: "2025-01-25T23:59:00", marks: 45, submitted_time: "2025-01-24T18:30:00", answers: "Completed all exercises correctly" },
-    { id: "SAS-002", student_name: "Bob Williams", student_id: "STU-002", assessment_title: "Python Variables Practice", assessment_id: "ASM-001", assessment_type: "Assignment", due_date_time: "2025-01-25T23:59:00", marks: 48, submitted_time: "2025-01-25T10:15:00", answers: "Excellent variable naming" },
-    { id: "SAS-003", student_name: "Carol Davis", student_id: "STU-003", assessment_title: "JavaScript Functions Project", assessment_id: "ASM-002", assessment_type: "Assignment", due_date_time: "2025-01-28T23:59:00", marks: 92, submitted_time: "2025-01-27T20:45:00", answers: "Outstanding implementation" },
-    { id: "SAS-004", student_name: "David Martinez", student_id: "STU-004", assessment_title: "Data Visualization Report", assessment_id: "ASM-003", assessment_type: "Assignment", due_date_time: "2025-02-01T23:59:00", marks: 68, submitted_time: "2025-01-31T22:00:00", answers: "Good charts, needs more analysis" },
-    { id: "SAS-005", student_name: "Emma Brown", student_id: "STU-005", assessment_title: "React Component Building", assessment_id: "ASM-004", assessment_type: "Assignment", due_date_time: "2025-02-05T23:59:00", marks: 78, submitted_time: "2025-02-04T16:30:00", answers: "Well-structured components" },
-  ];
-
-  // Mock content data
-  const mockContent: Content[] = [
-    { id: "CNT-001", course_id: "c1a2b3c4", type: "Video", title: "Introduction to Python Programming", link: "https://example.com/video1", order_index: 45, created_at: "2025-01-10T08:00:00Z" },
-    { id: "CNT-002", course_id: "c1a2b3c4", type: "Document", title: "Python Syntax Guide", link: "https://example.com/doc1", order_index: 30, created_at: "2025-01-11T09:00:00Z" },
-    { id: "CNT-003", course_id: "c2b3c4d5", type: "Video", title: "JavaScript ES6 Features", link: "https://example.com/video2", order_index: 60, created_at: "2025-01-12T10:00:00Z" },
-    { id: "CNT-004", course_id: "c2b3c4d5", type: "Slides", title: "Async/Await Deep Dive", link: "https://example.com/slides1", order_index: 50, created_at: "2025-01-13T11:00:00Z" },
-    { id: "CNT-005", course_id: "c3c4d5e6", type: "Video", title: "Data Analysis with Pandas", link: "https://example.com/video3", order_index: 75, created_at: "2025-01-14T12:00:00Z" },
-  ];
-
-  // Mock quizzes data
-  const mockQuizzes: Quiz[] = [
-    { quiz_id: "QZ-001", course_id: "c1a2b3c4", title: "Python Basics Quiz", total_marks: 50, difficulty_level: "Beginner", created_at: "2025-01-12T08:00:00Z" },
-    { quiz_id: "QZ-002", course_id: "c1a2b3c4", title: "Python Data Structures Quiz", total_marks: 75, difficulty_level: "Intermediate", created_at: "2025-01-14T09:00:00Z" },
-    { quiz_id: "QZ-003", course_id: "c2b3c4d5", title: "JavaScript Fundamentals", total_marks: 60, difficulty_level: "Beginner", created_at: "2025-01-15T10:00:00Z" },
-    { quiz_id: "QZ-004", course_id: "c2b3c4d5", title: "Advanced JavaScript Patterns", total_marks: 100, difficulty_level: "Advanced", created_at: "2025-01-16T11:00:00Z" },
-    { quiz_id: "QZ-005", course_id: "c3c4d5e6", title: "Data Science Concepts", total_marks: 80, difficulty_level: "Intermediate", created_at: "2025-01-17T12:00:00Z" },
-  ];
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!session) {
+      setLoading(false);
+      return;
+    }
 
+    // Fetch courses
     const { data: coursesData } = await supabase
       .from("courses")
       .select("id, title")
       .eq("instructor_id", session.user.id);
-
     setCourses(coursesData || []);
 
     const courseIds = (coursesData || []).map(c => c.id);
+    
     if (courseIds.length > 0) {
+      // Fetch content
       const { data: contentData } = await supabase
         .from("content")
         .select("*")
         .in("course_id", courseIds)
         .order("order_index");
-      setContent(contentData && contentData.length > 0 ? contentData : mockContent);
+      setContent(contentData || []);
 
+      // Fetch quizzes
       const { data: quizzesData } = await supabase
         .from("quizzes")
         .select("*")
         .in("course_id", courseIds)
         .order("created_at", { ascending: false });
-      setQuizzes(quizzesData && quizzesData.length > 0 ? quizzesData : mockQuizzes);
-    } else {
-      // Use mock data when no real data exists
-      setContent(mockContent);
-      setQuizzes(mockQuizzes);
+      setQuizzes(quizzesData || []);
     }
+
+    // Fetch questions from assessment_questions table
+    const { data: questionsData } = await supabase
+      .from("assessment_questions")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setQuestions(questionsData || []);
+
+    // Fetch assignments from student_assessments table
+    const { data: assignmentsData } = await supabase
+      .from("student_assessments")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setAssignments(assignmentsData || []);
+
+    // Fetch student submissions
+    const { data: submissionsData } = await supabase
+      .from("student_submissions")
+      .select("*")
+      .order("created_at", { ascending: false });
     
-    // Set mock data for questions, assignments, and student answers
-    setQuestions(mockQuestions);
-    setAssignments(mockAssignments);
-    setStudentAnswers(mockStudentAnswers);
+    // Get student names for submissions
+    if (submissionsData && submissionsData.length > 0) {
+      const studentIds = [...new Set(submissionsData.map(s => s.student_id))];
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .in("id", studentIds);
+      
+      const profileMap = new Map(profilesData?.map(p => [p.id, p.name]) || []);
+      const submissionsWithNames = submissionsData.map(s => ({
+        ...s,
+        student_name: profileMap.get(s.student_id) || "Unknown Student"
+      }));
+      setStudentSubmissions(submissionsWithNames);
+    } else {
+      setStudentSubmissions([]);
+    }
+
+    setLoading(false);
   };
 
+  // Content CRUD
   const handleContentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -259,6 +261,19 @@ export function InstructorContentMaterials() {
     }
   };
 
+  const handleDeleteContent = async () => {
+    if (!deleteContentId) return;
+    const { error } = await supabase.from("content").delete().eq("id", deleteContentId);
+    if (error) {
+      toast({ title: "Error", description: "Failed to delete", variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Content deleted" });
+      fetchData();
+    }
+    setDeleteContentId(null);
+  };
+
+  // Quiz CRUD
   const handleQuizSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -290,54 +305,6 @@ export function InstructorContentMaterials() {
     }
   };
 
-  const handleQuestionSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const newQuestion: Question = {
-      id: `q${Date.now()}`,
-      ...questionForm,
-      upload_time: new Date().toISOString(),
-    };
-    
-    if (editingQuestion) {
-      setQuestions(questions.map(q => q.id === editingQuestion.id ? { ...newQuestion, id: editingQuestion.id } : q));
-      toast({ title: "Success", description: "Question updated" });
-    } else {
-      setQuestions([...questions, newQuestion]);
-      toast({ title: "Success", description: "Question created" });
-    }
-    resetQuestionForm();
-  };
-
-  const handleAssignmentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const newAssignment: Assignment = {
-      id: `as${Date.now()}`,
-      ...assignmentForm,
-      upload_time: new Date().toISOString(),
-    };
-    
-    if (editingAssignment) {
-      setAssignments(assignments.map(a => a.id === editingAssignment.id ? { ...newAssignment, id: editingAssignment.id } : a));
-      toast({ title: "Success", description: "Assignment updated" });
-    } else {
-      setAssignments([...assignments, newAssignment]);
-      toast({ title: "Success", description: "Assignment created" });
-    }
-    resetAssignmentForm();
-  };
-
-  const handleDeleteContent = async () => {
-    if (!deleteContentId) return;
-    const { error } = await supabase.from("content").delete().eq("id", deleteContentId);
-    if (error) {
-      toast({ title: "Error", description: "Failed to delete", variant: "destructive" });
-    } else {
-      toast({ title: "Success", description: "Content deleted" });
-      fetchData();
-    }
-    setDeleteContentId(null);
-  };
-
   const handleDeleteQuiz = async () => {
     if (!deleteQuizId) return;
     const { error } = await supabase.from("quizzes").delete().eq("quiz_id", deleteQuizId);
@@ -350,20 +317,115 @@ export function InstructorContentMaterials() {
     setDeleteQuizId(null);
   };
 
-  const handleDeleteQuestion = () => {
+  // Question CRUD
+  const handleQuestionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const questionData = {
+      assessment_id: questionForm.assessment_id,
+      question_number: questionForm.question_number,
+      question_type: questionForm.question_type,
+      category: questionForm.category || null,
+      question_text: questionForm.question_text,
+      correct_answer: questionForm.correct_answer || null,
+      course_id: questionForm.course_id || null,
+    };
+
+    if (editingQuestion) {
+      const { error } = await supabase
+        .from("assessment_questions")
+        .update(questionData)
+        .eq("id", editingQuestion.id);
+
+      if (error) {
+        toast({ title: "Error", description: "Failed to update question", variant: "destructive" });
+      } else {
+        toast({ title: "Success", description: "Question updated" });
+        fetchData();
+        resetQuestionForm();
+      }
+    } else {
+      const { error } = await supabase
+        .from("assessment_questions")
+        .insert([questionData]);
+
+      if (error) {
+        toast({ title: "Error", description: "Failed to create question", variant: "destructive" });
+      } else {
+        toast({ title: "Success", description: "Question created" });
+        fetchData();
+        resetQuestionForm();
+      }
+    }
+  };
+
+  const handleDeleteQuestion = async () => {
     if (!deleteQuestionId) return;
-    setQuestions(questions.filter(q => q.id !== deleteQuestionId));
-    toast({ title: "Success", description: "Question deleted" });
+    const { error } = await supabase.from("assessment_questions").delete().eq("id", deleteQuestionId);
+    if (error) {
+      toast({ title: "Error", description: "Failed to delete question", variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Question deleted" });
+      fetchData();
+    }
     setDeleteQuestionId(null);
   };
 
-  const handleDeleteAssignment = () => {
+  // Assignment CRUD
+  const handleAssignmentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const assignmentData = {
+      assessment_id: assignmentForm.assessment_id,
+      assessment_title: assignmentForm.assessment_title,
+      assessment_type: assignmentForm.assessment_type,
+      course_id: assignmentForm.course_id || null,
+      total_marks: assignmentForm.total_marks,
+      due_date_time: assignmentForm.due_date_time || null,
+      student_id: assignmentForm.student_id,
+    };
+
+    if (editingAssignment) {
+      const { error } = await supabase
+        .from("student_assessments")
+        .update(assignmentData)
+        .eq("id", editingAssignment.id);
+
+      if (error) {
+        toast({ title: "Error", description: "Failed to update assignment", variant: "destructive" });
+      } else {
+        toast({ title: "Success", description: "Assignment updated" });
+        fetchData();
+        resetAssignmentForm();
+      }
+    } else {
+      const { error } = await supabase
+        .from("student_assessments")
+        .insert([assignmentData]);
+
+      if (error) {
+        toast({ title: "Error", description: "Failed to create assignment", variant: "destructive" });
+      } else {
+        toast({ title: "Success", description: "Assignment created" });
+        fetchData();
+        resetAssignmentForm();
+      }
+    }
+  };
+
+  const handleDeleteAssignment = async () => {
     if (!deleteAssignmentId) return;
-    setAssignments(assignments.filter(a => a.id !== deleteAssignmentId));
-    toast({ title: "Success", description: "Assignment deleted" });
+    const { error } = await supabase.from("student_assessments").delete().eq("id", deleteAssignmentId);
+    if (error) {
+      toast({ title: "Error", description: "Failed to delete assignment", variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Assignment deleted" });
+      fetchData();
+    }
     setDeleteAssignmentId(null);
   };
 
+  // Reset forms
   const resetContentForm = () => {
     setContentForm({ course_id: "", type: "document", title: "", link: "", order_index: 0 });
     setEditingContent(null);
@@ -377,23 +439,18 @@ export function InstructorContentMaterials() {
   };
 
   const resetQuestionForm = () => {
-    setQuestionForm({ assessment_id: "", question_number: 1, question_type: "multiple_choice", category: "", question_text: "", correct_answer: "" });
+    setQuestionForm({ assessment_id: "", question_number: 1, question_type: "MCQ", category: "", question_text: "", correct_answer: "", course_id: "" });
     setEditingQuestion(null);
     setIsQuestionDialogOpen(false);
   };
 
   const resetAssignmentForm = () => {
-    setAssignmentForm({ title: "", assessment_id: "", points: 100, due_date_time: "", rubrics: "", topic: "" });
+    setAssignmentForm({ assessment_id: "", assessment_title: "", assessment_type: "Assignment", course_id: "", total_marks: 100, due_date_time: "", student_id: "00000000-0000-0000-0000-000000000000" });
     setEditingAssignment(null);
     setIsAssignmentDialogOpen(false);
   };
 
-  const formatCourseId = (courseId: string) => {
-    const courseFormats = ["CSC 101", "CSC 201", "CSC 303", "CSC 405", "CSC 210", "CSC 315", "CSC 420", "CSC 150", "CSC 250", "CSC 360"];
-    const index = courses.findIndex(c => c.id === courseId);
-    return courseFormats[index >= 0 ? index % courseFormats.length : 0];
-  };
-
+  // Formatting functions
   const formatContentId = (id: string, index: number) => {
     return `CNT – ${String(index + 1).padStart(3, "0")}`;
   };
@@ -402,29 +459,77 @@ export function InstructorContentMaterials() {
     return `QZ – ${String(index + 1).padStart(3, "0")}`;
   };
 
+  const formatQuestionId = (id: string, index: number) => {
+    return `QST – ${String(index + 1).padStart(3, "0")}`;
+  };
+
+  const formatAssignmentId = (id: string, index: number) => {
+    return `ASG – ${String(index + 1).padStart(3, "0")}`;
+  };
+
+  const formatSubmissionId = (id: string, index: number) => {
+    return `SUB – ${String(index + 1).padStart(3, "0")}`;
+  };
+
+  const formatStudentId = (id: string, index: number) => {
+    return `STU – ${String(index + 1).padStart(3, "0")}`;
+  };
+
+  const getCourseTitle = (courseId: string) => {
+    return courses.find(c => c.id === courseId)?.title || courseId;
+  };
+
+  const getAssignmentTitle = (assessmentId: string) => {
+    const assignment = assignments.find(a => a.assessment_id === assessmentId);
+    return assignment?.assessment_title || assessmentId;
+  };
+
+  // Filters
   const filteredContent = content.filter(c => {
-    const matchesSearch = c.title.toLowerCase().includes(materialSearchTerm.toLowerCase());
+    const matchesSearch = c.title.toLowerCase().includes(materialSearchTerm.toLowerCase()) ||
+      c.type.toLowerCase().includes(materialSearchTerm.toLowerCase());
     const matchesCourse = selectedCourse === "all" || c.course_id === selectedCourse;
     return matchesSearch && matchesCourse;
   });
 
   const filteredQuizzes = quizzes.filter(q => {
-    const matchesSearch = q.quiz_id.toLowerCase().includes(quizSearchTerm.toLowerCase());
+    const matchesSearch = q.title.toLowerCase().includes(quizSearchTerm.toLowerCase()) ||
+      (q.difficulty_level || "").toLowerCase().includes(quizSearchTerm.toLowerCase());
     const matchesCourse = selectedCourse === "all" || q.course_id === selectedCourse;
     return matchesSearch && matchesCourse;
   });
 
-  const filteredQuestions = questions.filter(q => 
-    q.id.toLowerCase().includes(questionSearchTerm.toLowerCase())
-  );
+  const filteredQuestions = questions.filter(q => {
+    const searchLower = questionSearchTerm.toLowerCase();
+    return q.assessment_id.toLowerCase().includes(searchLower) ||
+      q.question_text.toLowerCase().includes(searchLower) ||
+      (q.category || "").toLowerCase().includes(searchLower) ||
+      q.question_type.toLowerCase().includes(searchLower);
+  });
 
-  const filteredAssignments = assignments.filter(a => 
-    a.assessment_id.toLowerCase().includes(assignmentSearchTerm.toLowerCase())
-  );
+  const filteredAssignments = assignments.filter(a => {
+    const searchLower = assignmentSearchTerm.toLowerCase();
+    return a.assessment_id.toLowerCase().includes(searchLower) ||
+      a.assessment_title.toLowerCase().includes(searchLower) ||
+      a.assessment_type.toLowerCase().includes(searchLower) ||
+      (a.course_id || "").toLowerCase().includes(searchLower);
+  });
 
-  const filteredStudentAnswers = studentAnswers.filter(sa => 
-    sa.assessment_id.toLowerCase().includes(studentAnswerSearchTerm.toLowerCase())
-  );
+  const filteredSubmissions = studentSubmissions.filter(s => {
+    const searchLower = submissionSearchTerm.toLowerCase();
+    return s.assessment_id.toLowerCase().includes(searchLower) ||
+      (s.student_name || "").toLowerCase().includes(searchLower) ||
+      s.answer.toLowerCase().includes(searchLower) ||
+      s.status.toLowerCase().includes(searchLower);
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -455,7 +560,7 @@ export function InstructorContentMaterials() {
           <TabsTrigger value="quizzes">Quiz Assignments</TabsTrigger>
           <TabsTrigger value="questions">Questions</TabsTrigger>
           <TabsTrigger value="assignments">Assignments</TabsTrigger>
-          <TabsTrigger value="studentAnswers">Student Assessment Answers</TabsTrigger>
+          <TabsTrigger value="submissions">Student Assessment Answers</TabsTrigger>
         </TabsList>
 
         {/* Lecture Materials Tab */}
@@ -555,7 +660,7 @@ export function InstructorContentMaterials() {
               <div className="flex items-center gap-2 mb-4">
                 <Search className="h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by Assessment ID..."
+                  placeholder="Search by Title or Topic..."
                   value={quizSearchTerm}
                   onChange={(e) => setQuizSearchTerm(e.target.value)}
                   className="w-64"
@@ -625,7 +730,7 @@ export function InstructorContentMaterials() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Questions</CardTitle>
-                <CardDescription>Manage quiz questions</CardDescription>
+                <CardDescription>Manage assessment questions</CardDescription>
               </div>
               <Button onClick={() => { resetQuestionForm(); setIsQuestionDialogOpen(true); }}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -636,7 +741,7 @@ export function InstructorContentMaterials() {
               <div className="flex items-center gap-2 mb-4">
                 <Search className="h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by Question ID..."
+                  placeholder="Search questions..."
                   value={questionSearchTerm}
                   onChange={(e) => setQuestionSearchTerm(e.target.value)}
                   className="w-64"
@@ -657,16 +762,16 @@ export function InstructorContentMaterials() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredQuestions.map((question) => (
+                  {filteredQuestions.map((question, index) => (
                     <TableRow key={question.id}>
-                      <TableCell className="font-mono text-sm">{question.id}</TableCell>
+                      <TableCell className="font-mono text-sm">{formatQuestionId(question.id, index)}</TableCell>
                       <TableCell className="font-mono text-sm">{question.assessment_id}</TableCell>
                       <TableCell>{question.question_number}</TableCell>
                       <TableCell>{question.question_type}</TableCell>
-                      <TableCell>{question.category}</TableCell>
+                      <TableCell>{question.category || "-"}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{question.question_text}</TableCell>
-                      <TableCell>{question.correct_answer}</TableCell>
-                      <TableCell>{new Date(question.upload_time).toLocaleDateString()}</TableCell>
+                      <TableCell className="max-w-[150px] truncate">{question.correct_answer || "-"}</TableCell>
+                      <TableCell>{question.created_at ? new Date(question.created_at).toLocaleDateString() : "-"}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => setSelectedQuestion(question)}>
                           <Eye className="h-4 w-4" />
@@ -677,9 +782,10 @@ export function InstructorContentMaterials() {
                             assessment_id: question.assessment_id,
                             question_number: question.question_number,
                             question_type: question.question_type,
-                            category: question.category,
+                            category: question.category || "",
                             question_text: question.question_text,
-                            correct_answer: question.correct_answer,
+                            correct_answer: question.correct_answer || "",
+                            course_id: question.course_id || "",
                           });
                           setIsQuestionDialogOpen(true);
                         }}>
@@ -721,7 +827,7 @@ export function InstructorContentMaterials() {
               <div className="flex items-center gap-2 mb-4">
                 <Search className="h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by Assessment ID..."
+                  placeholder="Search assignments..."
                   value={assignmentSearchTerm}
                   onChange={(e) => setAssignmentSearchTerm(e.target.value)}
                   className="w-64"
@@ -730,26 +836,34 @@ export function InstructorContentMaterials() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Assignment ID</TableHead>
                     <TableHead>Title</TableHead>
                     <TableHead>Assessment ID</TableHead>
-                    <TableHead>Points</TableHead>
-                    <TableHead>Due Date Time</TableHead>
-                    <TableHead>Upload Time</TableHead>
-                    <TableHead>Rubrics</TableHead>
-                    <TableHead>Topic</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Total Marks</TableHead>
+                    <TableHead>Due Date</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredAssignments.map((assignment) => (
+                  {filteredAssignments.map((assignment, index) => (
                     <TableRow key={assignment.id}>
-                      <TableCell className="font-medium">{assignment.title}</TableCell>
+                      <TableCell className="font-mono text-sm">{formatAssignmentId(assignment.id, index)}</TableCell>
+                      <TableCell className="font-medium">{assignment.assessment_title}</TableCell>
                       <TableCell className="font-mono text-sm">{assignment.assessment_id}</TableCell>
-                      <TableCell>{assignment.points}</TableCell>
-                      <TableCell>{new Date(assignment.due_date_time).toLocaleString()}</TableCell>
-                      <TableCell>{new Date(assignment.upload_time).toLocaleDateString()}</TableCell>
-                      <TableCell className="max-w-[150px] truncate">{assignment.rubrics}</TableCell>
-                      <TableCell>{assignment.topic}</TableCell>
+                      <TableCell>{assignment.assessment_type}</TableCell>
+                      <TableCell>{assignment.total_marks}</TableCell>
+                      <TableCell>{assignment.due_date_time ? new Date(assignment.due_date_time).toLocaleDateString() : "-"}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          assignment.status === "Graded" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
+                          assignment.status === "Submitted" ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" :
+                          "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                        }`}>
+                          {assignment.status || "Pending"}
+                        </span>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => setSelectedAssignment(assignment)}>
                           <Eye className="h-4 w-4" />
@@ -757,12 +871,13 @@ export function InstructorContentMaterials() {
                         <Button variant="ghost" size="icon" onClick={() => {
                           setEditingAssignment(assignment);
                           setAssignmentForm({
-                            title: assignment.title,
                             assessment_id: assignment.assessment_id,
-                            points: assignment.points,
-                            due_date_time: assignment.due_date_time,
-                            rubrics: assignment.rubrics,
-                            topic: assignment.topic,
+                            assessment_title: assignment.assessment_title,
+                            assessment_type: assignment.assessment_type,
+                            course_id: assignment.course_id || "",
+                            total_marks: assignment.total_marks,
+                            due_date_time: assignment.due_date_time ? new Date(assignment.due_date_time).toISOString().slice(0, 16) : "",
+                            student_id: assignment.student_id,
                           });
                           setIsAssignmentDialogOpen(true);
                         }}>
@@ -787,59 +902,66 @@ export function InstructorContentMaterials() {
           </Card>
         </TabsContent>
 
-        {/* Student Assessment Answers Tab */}
-        <TabsContent value="studentAnswers">
+        {/* Student Submissions Tab */}
+        <TabsContent value="submissions">
           <Card>
             <CardHeader>
               <CardTitle>Student Assessment Answers</CardTitle>
-              <CardDescription>View student submissions and answers</CardDescription>
+              <CardDescription>View student submissions</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2 mb-4">
                 <Search className="h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by Assessment ID..."
-                  value={studentAnswerSearchTerm}
-                  onChange={(e) => setStudentAnswerSearchTerm(e.target.value)}
+                  placeholder="Search submissions..."
+                  value={submissionSearchTerm}
+                  onChange={(e) => setSubmissionSearchTerm(e.target.value)}
                   className="w-64"
                 />
               </div>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Submission ID</TableHead>
                     <TableHead>Student Name</TableHead>
                     <TableHead>Student ID</TableHead>
                     <TableHead>Assessment Title</TableHead>
                     <TableHead>Assessment ID</TableHead>
-                    <TableHead>Assessment Type</TableHead>
-                    <TableHead>Due Date Time</TableHead>
-                    <TableHead>Marks</TableHead>
+                    <TableHead>Answer</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Submitted Time</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredStudentAnswers.map((answer) => (
-                    <TableRow key={answer.id}>
-                      <TableCell className="font-medium">{answer.student_name}</TableCell>
-                      <TableCell className="font-mono text-sm">{answer.student_id}</TableCell>
-                      <TableCell>{answer.assessment_title}</TableCell>
-                      <TableCell className="font-mono text-sm">{answer.assessment_id}</TableCell>
-                      <TableCell>{answer.assessment_type}</TableCell>
-                      <TableCell>{new Date(answer.due_date_time).toLocaleString()}</TableCell>
-                      <TableCell>{answer.marks}</TableCell>
-                      <TableCell>{new Date(answer.submitted_time).toLocaleString()}</TableCell>
+                  {filteredSubmissions.map((submission, index) => (
+                    <TableRow key={submission.id}>
+                      <TableCell className="font-mono text-sm">{formatSubmissionId(submission.id, index)}</TableCell>
+                      <TableCell className="font-medium">{submission.student_name}</TableCell>
+                      <TableCell className="font-mono text-sm">{formatStudentId(submission.student_id, index)}</TableCell>
+                      <TableCell>{getAssignmentTitle(submission.assessment_id)}</TableCell>
+                      <TableCell className="font-mono text-sm">{submission.assessment_id}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">{submission.answer}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          submission.status === "Submitted" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
+                          "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                        }`}>
+                          {submission.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>{submission.created_at ? new Date(submission.created_at).toLocaleString() : "-"}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => setSelectedStudentAnswer(answer)}>
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedSubmission(submission)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filteredStudentAnswers.length === 0 && (
+                  {filteredSubmissions.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                        No student answers found
+                        No submissions found
                       </TableCell>
                     </TableRow>
                   )}
@@ -966,27 +1088,31 @@ export function InstructorContentMaterials() {
                 <Input value={questionForm.assessment_id} onChange={(e) => setQuestionForm({ ...questionForm, assessment_id: e.target.value })} required />
               </div>
               <div className="space-y-2">
-                <Label>Question Number</Label>
-                <Input type="number" value={questionForm.question_number} onChange={(e) => setQuestionForm({ ...questionForm, question_number: parseInt(e.target.value) || 1 })} required />
+                <Label>Course ID</Label>
+                <Input value={questionForm.course_id} onChange={(e) => setQuestionForm({ ...questionForm, course_id: e.target.value })} placeholder="e.g., CSE-101" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Question Number</Label>
+                <Input type="number" value={questionForm.question_number} onChange={(e) => setQuestionForm({ ...questionForm, question_number: parseInt(e.target.value) || 1 })} required />
+              </div>
               <div className="space-y-2">
                 <Label>Question Type</Label>
                 <Select value={questionForm.question_type} onValueChange={(v) => setQuestionForm({ ...questionForm, question_type: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
-                    <SelectItem value="true_false">True/False</SelectItem>
-                    <SelectItem value="short_answer">Short Answer</SelectItem>
-                    <SelectItem value="essay">Essay</SelectItem>
+                    <SelectItem value="MCQ">Multiple Choice</SelectItem>
+                    <SelectItem value="Short Q">Short Answer</SelectItem>
+                    <SelectItem value="Coding">Coding</SelectItem>
+                    <SelectItem value="Essay">Essay</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <Input value={questionForm.category} onChange={(e) => setQuestionForm({ ...questionForm, category: e.target.value })} required />
-              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Input value={questionForm.category} onChange={(e) => setQuestionForm({ ...questionForm, category: e.target.value })} placeholder="e.g., Basics, Functions, Data Types" />
             </div>
             <div className="space-y-2">
               <Label>Question Text</Label>
@@ -994,7 +1120,7 @@ export function InstructorContentMaterials() {
             </div>
             <div className="space-y-2">
               <Label>Correct Answer</Label>
-              <Input value={questionForm.correct_answer} onChange={(e) => setQuestionForm({ ...questionForm, correct_answer: e.target.value })} required />
+              <Input value={questionForm.correct_answer} onChange={(e) => setQuestionForm({ ...questionForm, correct_answer: e.target.value })} />
             </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={resetQuestionForm}>Cancel</Button>
@@ -1017,30 +1143,40 @@ export function InstructorContentMaterials() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Title</Label>
-                <Input value={assignmentForm.title} onChange={(e) => setAssignmentForm({ ...assignmentForm, title: e.target.value })} required />
+                <Input value={assignmentForm.assessment_title} onChange={(e) => setAssignmentForm({ ...assignmentForm, assessment_title: e.target.value })} required />
               </div>
               <div className="space-y-2">
                 <Label>Assessment ID</Label>
-                <Input value={assignmentForm.assessment_id} onChange={(e) => setAssignmentForm({ ...assignmentForm, assessment_id: e.target.value })} required />
+                <Input value={assignmentForm.assessment_id} onChange={(e) => setAssignmentForm({ ...assignmentForm, assessment_id: e.target.value })} required placeholder="e.g., ASM-001" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Points</Label>
-                <Input type="number" value={assignmentForm.points} onChange={(e) => setAssignmentForm({ ...assignmentForm, points: parseInt(e.target.value) || 100 })} required />
+                <Label>Assessment Type</Label>
+                <Select value={assignmentForm.assessment_type} onValueChange={(v) => setAssignmentForm({ ...assignmentForm, assessment_type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Assignment">Assignment</SelectItem>
+                    <SelectItem value="Quiz">Quiz</SelectItem>
+                    <SelectItem value="Project">Project</SelectItem>
+                    <SelectItem value="Exam">Exam</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Course ID</Label>
+                <Input value={assignmentForm.course_id} onChange={(e) => setAssignmentForm({ ...assignmentForm, course_id: e.target.value })} placeholder="e.g., CSE-101" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Total Marks</Label>
+                <Input type="number" value={assignmentForm.total_marks} onChange={(e) => setAssignmentForm({ ...assignmentForm, total_marks: parseInt(e.target.value) || 100 })} required />
               </div>
               <div className="space-y-2">
                 <Label>Due Date Time</Label>
-                <Input type="datetime-local" value={assignmentForm.due_date_time} onChange={(e) => setAssignmentForm({ ...assignmentForm, due_date_time: e.target.value })} required />
+                <Input type="datetime-local" value={assignmentForm.due_date_time} onChange={(e) => setAssignmentForm({ ...assignmentForm, due_date_time: e.target.value })} />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Topic</Label>
-              <Input value={assignmentForm.topic} onChange={(e) => setAssignmentForm({ ...assignmentForm, topic: e.target.value })} required />
-            </div>
-            <div className="space-y-2">
-              <Label>Rubrics</Label>
-              <Input value={assignmentForm.rubrics} onChange={(e) => setAssignmentForm({ ...assignmentForm, rubrics: e.target.value })} required />
             </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={resetAssignmentForm}>Cancel</Button>
@@ -1135,7 +1271,7 @@ export function InstructorContentMaterials() {
               </div>
               <div>
                 <Label className="text-muted-foreground">Course</Label>
-                <p className="font-medium">{courses.find(c => c.id === selectedQuiz.course_id)?.title || "-"}</p>
+                <p className="font-medium">{getCourseTitle(selectedQuiz.course_id)}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground">Points</Label>
@@ -1162,29 +1298,29 @@ export function InstructorContentMaterials() {
           </DialogHeader>
           {selectedQuestion && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-muted-foreground">Question ID</Label>
-                  <p className="font-medium">{selectedQuestion.id}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Assessment ID</Label>
-                  <p className="font-medium">{selectedQuestion.assessment_id}</p>
-                </div>
+              <div>
+                <Label className="text-muted-foreground">Question ID</Label>
+                <p className="font-medium">{formatQuestionId(selectedQuestion.id, filteredQuestions.findIndex(q => q.id === selectedQuestion.id))}</p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-muted-foreground">Question Number</Label>
-                  <p className="font-medium">{selectedQuestion.question_number}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Question Type</Label>
-                  <p className="font-medium">{selectedQuestion.question_type}</p>
-                </div>
+              <div>
+                <Label className="text-muted-foreground">Assessment ID</Label>
+                <p className="font-medium">{selectedQuestion.assessment_id}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Course ID</Label>
+                <p className="font-medium">{selectedQuestion.course_id || "-"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Question Number</Label>
+                <p className="font-medium">{selectedQuestion.question_number}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Question Type</Label>
+                <p className="font-medium">{selectedQuestion.question_type}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground">Category</Label>
-                <p className="font-medium">{selectedQuestion.category}</p>
+                <p className="font-medium">{selectedQuestion.category || "-"}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground">Question Text</Label>
@@ -1192,11 +1328,11 @@ export function InstructorContentMaterials() {
               </div>
               <div>
                 <Label className="text-muted-foreground">Correct Answer</Label>
-                <p className="font-medium">{selectedQuestion.correct_answer}</p>
+                <p className="font-medium">{selectedQuestion.correct_answer || "-"}</p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Upload Time</Label>
-                <p className="font-medium">{new Date(selectedQuestion.upload_time).toLocaleString()}</p>
+                <Label className="text-muted-foreground">Upload Date</Label>
+                <p className="font-medium">{selectedQuestion.created_at ? new Date(selectedQuestion.created_at).toLocaleDateString() : "-"}</p>
               </div>
             </div>
           )}
@@ -1211,92 +1347,90 @@ export function InstructorContentMaterials() {
           </DialogHeader>
           {selectedAssignment && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-muted-foreground">Title</Label>
-                  <p className="font-medium">{selectedAssignment.title}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Assessment ID</Label>
-                  <p className="font-medium">{selectedAssignment.assessment_id}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-muted-foreground">Points</Label>
-                  <p className="font-medium">{selectedAssignment.points}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Topic</Label>
-                  <p className="font-medium">{selectedAssignment.topic}</p>
-                </div>
+              <div>
+                <Label className="text-muted-foreground">Assignment ID</Label>
+                <p className="font-medium">{formatAssignmentId(selectedAssignment.id, filteredAssignments.findIndex(a => a.id === selectedAssignment.id))}</p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Due Date Time</Label>
-                <p className="font-medium">{new Date(selectedAssignment.due_date_time).toLocaleString()}</p>
+                <Label className="text-muted-foreground">Title</Label>
+                <p className="font-medium">{selectedAssignment.assessment_title}</p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Rubrics</Label>
-                <p className="font-medium">{selectedAssignment.rubrics}</p>
+                <Label className="text-muted-foreground">Assessment ID</Label>
+                <p className="font-medium">{selectedAssignment.assessment_id}</p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Upload Time</Label>
-                <p className="font-medium">{new Date(selectedAssignment.upload_time).toLocaleString()}</p>
+                <Label className="text-muted-foreground">Type</Label>
+                <p className="font-medium">{selectedAssignment.assessment_type}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Course ID</Label>
+                <p className="font-medium">{selectedAssignment.course_id || "-"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Total Marks</Label>
+                <p className="font-medium">{selectedAssignment.total_marks}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Obtained Marks</Label>
+                <p className="font-medium">{selectedAssignment.obtained_mark || 0}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Due Date</Label>
+                <p className="font-medium">{selectedAssignment.due_date_time ? new Date(selectedAssignment.due_date_time).toLocaleString() : "-"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Status</Label>
+                <p className="font-medium">{selectedAssignment.status || "Pending"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Performance Level</Label>
+                <p className="font-medium">{selectedAssignment.performance_level || "-"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Feedback</Label>
+                <p className="font-medium">{selectedAssignment.feedback || "-"}</p>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Student Answer Detail Modal */}
-      <Dialog open={!!selectedStudentAnswer} onOpenChange={() => setSelectedStudentAnswer(null)}>
+      {/* Submission Detail Modal */}
+      <Dialog open={!!selectedSubmission} onOpenChange={() => setSelectedSubmission(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Student Answer Details</DialogTitle>
+            <DialogTitle>Submission Details</DialogTitle>
           </DialogHeader>
-          {selectedStudentAnswer && (
+          {selectedSubmission && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-muted-foreground">Student Name</Label>
-                  <p className="font-medium">{selectedStudentAnswer.student_name}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Student ID</Label>
-                  <p className="font-medium">{selectedStudentAnswer.student_id}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-muted-foreground">Assessment Title</Label>
-                  <p className="font-medium">{selectedStudentAnswer.assessment_title}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Assessment ID</Label>
-                  <p className="font-medium">{selectedStudentAnswer.assessment_id}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-muted-foreground">Assessment Type</Label>
-                  <p className="font-medium">{selectedStudentAnswer.assessment_type}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">Marks</Label>
-                  <p className="font-medium">{selectedStudentAnswer.marks}</p>
-                </div>
+              <div>
+                <Label className="text-muted-foreground">Submission ID</Label>
+                <p className="font-medium">{formatSubmissionId(selectedSubmission.id, filteredSubmissions.findIndex(s => s.id === selectedSubmission.id))}</p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Due Date Time</Label>
-                <p className="font-medium">{new Date(selectedStudentAnswer.due_date_time).toLocaleString()}</p>
+                <Label className="text-muted-foreground">Student Name</Label>
+                <p className="font-medium">{selectedSubmission.student_name}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Assessment ID</Label>
+                <p className="font-medium">{selectedSubmission.assessment_id}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Assessment Title</Label>
+                <p className="font-medium">{getAssignmentTitle(selectedSubmission.assessment_id)}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Answer</Label>
+                <p className="font-medium">{selectedSubmission.answer}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Status</Label>
+                <p className="font-medium">{selectedSubmission.status}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground">Submitted Time</Label>
-                <p className="font-medium">{new Date(selectedStudentAnswer.submitted_time).toLocaleString()}</p>
-              </div>
-              <div>
-                <Label className="text-muted-foreground">Answers</Label>
-                <p className="font-medium">{selectedStudentAnswer.answers}</p>
+                <p className="font-medium">{selectedSubmission.created_at ? new Date(selectedSubmission.created_at).toLocaleString() : "-"}</p>
               </div>
             </div>
           )}
