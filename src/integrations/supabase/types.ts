@@ -54,6 +54,7 @@ export type Database = {
           assessment_id: string
           category: string | null
           correct_answer: string | null
+          course_id: string | null
           created_at: string | null
           id: string
           question_number: number
@@ -64,6 +65,7 @@ export type Database = {
           assessment_id: string
           category?: string | null
           correct_answer?: string | null
+          course_id?: string | null
           created_at?: string | null
           id?: string
           question_number: number
@@ -74,6 +76,7 @@ export type Database = {
           assessment_id?: string
           category?: string | null
           correct_answer?: string | null
+          course_id?: string | null
           created_at?: string | null
           id?: string
           question_number?: number
@@ -678,6 +681,7 @@ export type Database = {
           assessment_id: string
           assessment_title: string
           assessment_type: string
+          course_id: string | null
           created_at: string | null
           due_date_time: string | null
           feedback: string | null
@@ -692,6 +696,7 @@ export type Database = {
           assessment_id: string
           assessment_title: string
           assessment_type: string
+          course_id?: string | null
           created_at?: string | null
           due_date_time?: string | null
           feedback?: string | null
@@ -706,6 +711,7 @@ export type Database = {
           assessment_id?: string
           assessment_title?: string
           assessment_type?: string
+          course_id?: string | null
           created_at?: string | null
           due_date_time?: string | null
           feedback?: string | null

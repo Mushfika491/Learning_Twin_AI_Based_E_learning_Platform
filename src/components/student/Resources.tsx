@@ -26,6 +26,7 @@ interface Assessment {
   id: string;
   assessment_id: string;
   student_id: string;
+  course_id: string | null;
   assessment_type: string;
   assessment_title: string;
   obtained_mark: number;
@@ -40,6 +41,7 @@ interface Assessment {
 interface Question {
   id: string;
   assessment_id: string;
+  course_id: string | null;
   question_number: number;
   question_type: string;
   question_text: string;
@@ -125,16 +127,11 @@ export function Resources({ userId }: { userId: string }) {
 
   const fetchAssessments = async () => {
     setAssessmentsLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      setAssessmentsLoading(false);
-      return;
-    }
     
+    // Fetch all assessments (sample data for demo)
     const { data, error } = await supabase
       .from("student_assessments")
       .select("*")
-      .eq("student_id", session.user.id)
       .order("created_at", { ascending: false });
     
     if (error) {
@@ -429,13 +426,13 @@ export function Resources({ userId }: { userId: string }) {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Assessment ID</TableHead>
+                      <TableHead>Course ID</TableHead>
                       <TableHead>Assessment Type</TableHead>
                       <TableHead>Assessment Title</TableHead>
                       <TableHead>Obtained Mark</TableHead>
                       <TableHead>Total Marks</TableHead>
                       <TableHead>Due Date & Time</TableHead>
                       <TableHead>Performance Level</TableHead>
-                      <TableHead>Feedback</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -444,6 +441,9 @@ export function Resources({ userId }: { userId: string }) {
                     {filteredAssessments.map((assessment) => (
                       <TableRow key={assessment.id}>
                         <TableCell className="font-medium">{assessment.assessment_id}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{assessment.course_id || "N/A"}</Badge>
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">{assessment.assessment_type}</Badge>
                         </TableCell>
@@ -456,7 +456,6 @@ export function Resources({ userId }: { userId: string }) {
                             {assessment.performance_level || "Pending"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="max-w-xs truncate">{assessment.feedback || "N/A"}</TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(assessment.status || "Not Submitted")}>
                             {assessment.status || "Not Submitted"}
@@ -515,11 +514,11 @@ export function Resources({ userId }: { userId: string }) {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Assessment ID</TableHead>
+                      <TableHead>Course ID</TableHead>
                       <TableHead>Question Number</TableHead>
                       <TableHead>Question Type</TableHead>
                       <TableHead>Question Text</TableHead>
                       <TableHead>Category</TableHead>
-                      <TableHead>Correct Answer</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -527,13 +526,15 @@ export function Resources({ userId }: { userId: string }) {
                     {filteredQuestions.map((question) => (
                       <TableRow key={question.id}>
                         <TableCell className="font-medium">{question.assessment_id}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{question.course_id || "N/A"}</Badge>
+                        </TableCell>
                         <TableCell>{question.question_number}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{question.question_type}</Badge>
                         </TableCell>
                         <TableCell className="max-w-xs truncate">{question.question_text}</TableCell>
                         <TableCell>{question.category || "N/A"}</TableCell>
-                        <TableCell className="max-w-xs truncate">{question.correct_answer || "N/A"}</TableCell>
                         <TableCell className="flex gap-1">
                           <Button size="sm" variant="ghost" onClick={() => handleViewQuestion(question)}>
                             <Eye className="h-4 w-4" />
