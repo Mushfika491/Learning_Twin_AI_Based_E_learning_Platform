@@ -51,6 +51,17 @@ export function InstructorMyCourses() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string>("");
   const [selectedPrereq, setSelectedPrereq] = useState<Prerequisite | null>(null);
+  
+  // Prerequisite CRUD states
+  const [isPrereqDialogOpen, setIsPrereqDialogOpen] = useState(false);
+  const [editingPrereq, setEditingPrereq] = useState<Prerequisite | null>(null);
+  const [deletePrereqId, setDeletePrereqId] = useState<string | null>(null);
+  const [prereqFormData, setPrereqFormData] = useState({
+    course_id: "",
+    prerequisite_course_id: "",
+    prerequisite_text: "",
+  });
+  
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -189,10 +200,90 @@ export function InstructorMyCourses() {
     setIsDialogOpen(false);
   };
 
+  // Prerequisite CRUD handlers
+  const handlePrereqSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (editingPrereq) {
+      const { error } = await supabase
+        .from("course_prerequisites")
+        .update({
+          course_id: prereqFormData.course_id,
+          prerequisite_course_id: prereqFormData.prerequisite_course_id || null,
+          prerequisite_text: prereqFormData.prerequisite_text || null,
+        })
+        .eq("id", editingPrereq.id);
+
+      if (error) {
+        toast({ title: "Error", description: "Failed to update prerequisite", variant: "destructive" });
+      } else {
+        toast({ title: "Success", description: "Prerequisite updated" });
+        fetchData();
+        resetPrereqForm();
+      }
+    } else {
+      const { error } = await supabase
+        .from("course_prerequisites")
+        .insert([{
+          course_id: prereqFormData.course_id,
+          prerequisite_course_id: prereqFormData.prerequisite_course_id || null,
+          prerequisite_text: prereqFormData.prerequisite_text || null,
+        }]);
+
+      if (error) {
+        toast({ title: "Error", description: "Failed to create prerequisite", variant: "destructive" });
+      } else {
+        toast({ title: "Success", description: "Prerequisite created" });
+        fetchData();
+        resetPrereqForm();
+      }
+    }
+  };
+
+  const handlePrereqDelete = async () => {
+    if (!deletePrereqId) return;
+    const { error } = await supabase.from("course_prerequisites").delete().eq("id", deletePrereqId);
+
+    if (error) {
+      toast({ title: "Error", description: "Failed to delete prerequisite", variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Prerequisite deleted" });
+      fetchData();
+    }
+    setDeletePrereqId(null);
+  };
+
+  const handlePrereqEdit = (prereq: Prerequisite) => {
+    setEditingPrereq(prereq);
+    setPrereqFormData({
+      course_id: prereq.course_id,
+      prerequisite_course_id: prereq.prerequisite_course_id || "",
+      prerequisite_text: prereq.prerequisite_text || "",
+    });
+    setIsPrereqDialogOpen(true);
+  };
+
+  const resetPrereqForm = () => {
+    setPrereqFormData({ course_id: "", prerequisite_course_id: "", prerequisite_text: "" });
+    setEditingPrereq(null);
+    setIsPrereqDialogOpen(false);
+  };
+
   const formatCourseId = (courseId: string, index: number = 0) => {
     const courseFormats = ["CSC - 101", "CSC - 202", "CSC - 303", "CSC - 405", "CSC - 210", "CSC - 315", "CSC - 420"];
     const idx = courses.findIndex(c => c.id === courseId);
     return courseFormats[idx >= 0 ? idx % courseFormats.length : index % courseFormats.length];
+  };
+
+  const formatPrereqCourseId = (prereqCourseId: string | null, index: number = 0) => {
+    if (!prereqCourseId) return "-";
+    const prereqFormats = ["PRE - 001", "PRE - 002", "PRE - 003", "PRE - 004", "PRE - 005"];
+    return prereqFormats[index % prereqFormats.length];
+  };
+
+  const getCourseTitle = (courseId: string) => {
+    const course = courses.find(c => c.id === courseId);
+    return course?.title || "-";
   };
 
   const formatRatingId = (ratingId: string, index: number = 0): string => {
@@ -215,7 +306,11 @@ export function InstructorMyCourses() {
   );
 
   const filteredPrerequisites = prereqSearchTerm
-    ? prerequisites.filter((p) => p.course_id.toLowerCase().includes(prereqSearchTerm.toLowerCase()))
+    ? prerequisites.filter((p) => {
+        const courseTitle = getCourseTitle(p.course_id).toLowerCase();
+        return courseTitle.includes(prereqSearchTerm.toLowerCase()) || 
+               p.course_id.toLowerCase().includes(prereqSearchTerm.toLowerCase());
+      })
     : prerequisites;
 
   const filteredRatings = ratingsSearchTerm
@@ -308,12 +403,20 @@ export function InstructorMyCourses() {
         <TabsContent value="prerequisites">
           <Card>
             <CardHeader>
-              <CardTitle>Course Prerequisites</CardTitle>
-              <CardDescription>View prerequisites for your courses</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Course Prerequisites</CardTitle>
+                  <CardDescription>Manage prerequisites for your courses</CardDescription>
+                </div>
+                <Button onClick={() => { resetPrereqForm(); setIsPrereqDialogOpen(true); }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Prerequisite
+                </Button>
+              </div>
               <div className="flex items-center gap-2 mt-2">
                 <Search className="h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by Course ID..."
+                  placeholder="Search by Course Title..."
                   value={prereqSearchTerm}
                   onChange={(e) => setPrereqSearchTerm(e.target.value)}
                   className="max-w-sm"
@@ -325,25 +428,33 @@ export function InstructorMyCourses() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Course ID</TableHead>
-                    <TableHead>Prerequisites</TableHead>
+                    <TableHead>Course Title</TableHead>
+                    <TableHead>Prerequisite Course ID</TableHead>
                     <TableHead className="text-right">Details</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredPrerequisites.map((prereq) => (
+                  {filteredPrerequisites.map((prereq, index) => (
                     <TableRow key={prereq.id}>
                       <TableCell className="font-medium">{formatCourseId(prereq.course_id)}</TableCell>
-                      <TableCell>{prereq.prerequisite_text || "None"}</TableCell>
+                      <TableCell>{getCourseTitle(prereq.course_id)}</TableCell>
+                      <TableCell>{formatPrereqCourseId(prereq.prerequisite_course_id, index)}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => setSelectedPrereq(prereq)}>
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handlePrereqEdit(prereq)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setDeletePrereqId(prereq.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </TableCell>
                     </TableRow>
                   ))}
                   {filteredPrerequisites.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                         No prerequisites found
                       </TableCell>
                     </TableRow>
@@ -496,12 +607,14 @@ export function InstructorMyCourses() {
               </div>
               <div>
                 <Label className="text-muted-foreground">Course Title</Label>
-                <p className="font-medium">
-                  {courses.find(c => c.id === selectedPrereq.course_id)?.title || "-"}
-                </p>
+                <p className="font-medium">{getCourseTitle(selectedPrereq.course_id)}</p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Prerequisite</Label>
+                <Label className="text-muted-foreground">Prerequisite Course ID</Label>
+                <p className="font-medium">{formatPrereqCourseId(selectedPrereq.prerequisite_course_id)}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Prerequisite Description</Label>
                 <p className="font-medium">{selectedPrereq.prerequisite_text || "None"}</p>
               </div>
               {selectedPrereq.prerequisite_course_id && (
@@ -516,6 +629,77 @@ export function InstructorMyCourses() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Prerequisite CRUD Dialog */}
+      <Dialog open={isPrereqDialogOpen} onOpenChange={setIsPrereqDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingPrereq ? "Edit Prerequisite" : "Add Prerequisite"}</DialogTitle>
+            <DialogDescription>
+              {editingPrereq ? "Update prerequisite details" : "Create a new prerequisite for a course"}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePrereqSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Course</Label>
+              <Select 
+                value={prereqFormData.course_id} 
+                onValueChange={(v) => setPrereqFormData({ ...prereqFormData, course_id: v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
+                <SelectContent>
+                  {courses.map((course) => (
+                    <SelectItem key={course.id} value={course.id}>
+                      {course.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Prerequisite Course (Optional)</Label>
+              <Select 
+                value={prereqFormData.prerequisite_course_id} 
+                onValueChange={(v) => setPrereqFormData({ ...prereqFormData, prerequisite_course_id: v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Select prerequisite course" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {courses
+                    .filter(c => c.id !== prereqFormData.course_id)
+                    .map((course) => (
+                      <SelectItem key={course.id} value={course.id}>
+                        {course.title}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Prerequisite Description</Label>
+              <Textarea
+                value={prereqFormData.prerequisite_text}
+                onChange={(e) => setPrereqFormData({ ...prereqFormData, prerequisite_text: e.target.value })}
+                placeholder="e.g., Basic knowledge of programming required"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={resetPrereqForm}>Cancel</Button>
+              <Button type="submit" disabled={!prereqFormData.course_id}>
+                {editingPrereq ? "Update" : "Create"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!deletePrereqId}
+        onOpenChange={() => setDeletePrereqId(null)}
+        onConfirm={handlePrereqDelete}
+        title="Delete Prerequisite"
+        description="Are you sure you want to delete this prerequisite? This action cannot be undone."
+      />
     </div>
   );
 }
