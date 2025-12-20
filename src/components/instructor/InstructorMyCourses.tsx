@@ -266,7 +266,7 @@ export function InstructorMyCourses() {
                     <TableHead>Category</TableHead>
                     <TableHead>Difficulty</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-right">Details</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -326,7 +326,7 @@ export function InstructorMyCourses() {
                   <TableRow>
                     <TableHead>Course ID</TableHead>
                     <TableHead>Prerequisites</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-right">Details</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
