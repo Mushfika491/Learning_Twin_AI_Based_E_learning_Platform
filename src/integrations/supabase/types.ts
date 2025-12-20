@@ -49,6 +49,39 @@ export type Database = {
           },
         ]
       }
+      admin_reports: {
+        Row: {
+          completion_rate: number
+          course_popularity: string
+          generated_at: string
+          id: string
+          report_id: string
+          report_title: string
+          report_type: string
+          time_period: string
+        }
+        Insert: {
+          completion_rate: number
+          course_popularity: string
+          generated_at?: string
+          id?: string
+          report_id: string
+          report_title: string
+          report_type: string
+          time_period: string
+        }
+        Update: {
+          completion_rate?: number
+          course_popularity?: string
+          generated_at?: string
+          id?: string
+          report_id?: string
+          report_title?: string
+          report_type?: string
+          time_period?: string
+        }
+        Relationships: []
+      }
       admin_users: {
         Row: {
           created_at: string
