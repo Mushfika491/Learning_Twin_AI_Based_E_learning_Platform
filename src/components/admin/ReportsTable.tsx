@@ -1,18 +1,27 @@
-import { useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, Trash2, Pencil, Plus, Search } from "lucide-react";
-import { DeleteConfirmDialog } from "../shared/DeleteConfirmDialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
   DialogTitle,
   DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Search, Eye, Pencil, Trash2, Plus } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -23,202 +32,206 @@ import {
 
 interface Report {
   id: string;
-  reportId: string;
-  title: string;
-  type: string;
-  coursePopularity: string;
-  userEngagement: string;
-  completionRate: string;
-  timePeriod: string;
-  generatedAt: string;
-  status: "Completed" | "Failed" | "Scheduled";
+  report_id: string;
+  report_title: string;
+  report_type: string;
+  course_popularity: string;
+  completion_rate: number;
+  time_period: string;
+  generated_at: string;
 }
 
-const mockReports: Report[] = [
-  { 
-    id: "1", 
-    reportId: "R - 001", 
-    title: "Monthly User Activity", 
-    type: "Activity", 
-    coursePopularity: "High",
-    userEngagement: "85%",
-    completionRate: "72%",
-    timePeriod: "January 2025",
-    generatedAt: "2025-02-01 09:00:00", 
-    status: "Completed" 
-  },
-  { 
-    id: "2", 
-    reportId: "R - 002", 
-    title: "Course Completion Analysis", 
-    type: "Performance", 
-    coursePopularity: "Medium",
-    userEngagement: "78%",
-    completionRate: "65%",
-    timePeriod: "Q4 2024",
-    generatedAt: "2025-01-15 14:30:00", 
-    status: "Completed" 
-  },
-  { 
-    id: "3", 
-    reportId: "R - 003", 
-    title: "Revenue Report Q4 2024", 
-    type: "Financial", 
-    coursePopularity: "High",
-    userEngagement: "92%",
-    completionRate: "88%",
-    timePeriod: "Q4 2024",
-    generatedAt: "2025-01-10 11:00:00", 
-    status: "Completed" 
-  },
-  { 
-    id: "4", 
-    reportId: "R - 004", 
-    title: "System Health Check", 
-    type: "System", 
-    coursePopularity: "Low",
-    userEngagement: "45%",
-    completionRate: "50%",
-    timePeriod: "Weekly",
-    generatedAt: "2025-02-05 08:00:00", 
-    status: "Scheduled" 
-  },
-  { 
-    id: "5", 
-    reportId: "R - 005", 
-    title: "User Engagement Metrics", 
-    type: "Analytics", 
-    coursePopularity: "High",
-    userEngagement: "N/A",
-    completionRate: "N/A",
-    timePeriod: "February 2025",
-    generatedAt: "2025-02-03 16:45:00", 
-    status: "Failed" 
-  },
-];
-
 export function ReportsTable() {
-  const [reports, setReports] = useState<Report[]>(mockReports);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewingReport, setViewingReport] = useState<Report | null>(null);
   const [editingReport, setEditingReport] = useState<Report | null>(null);
   const [deletingReport, setDeletingReport] = useState<Report | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<Report>>({
-    reportId: "",
-    title: "",
-    type: "",
-    coursePopularity: "",
-    userEngagement: "",
-    completionRate: "",
-    timePeriod: "",
-    generatedAt: "",
-    status: "Scheduled",
+    report_id: "",
+    report_title: "",
+    report_type: "",
+    course_popularity: "",
+    completion_rate: 0,
+    time_period: "",
   });
 
-  const filteredReports = reports.filter(report =>
-    report.reportId.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    fetchReports();
+  }, []);
 
-  const handleDeleteReport = () => {
-    if (deletingReport) {
-      setReports(reports.filter(r => r.id !== deletingReport.id));
-      setDeletingReport(null);
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('admin_reports')
+        .select('*')
+        .order('generated_at', { ascending: false });
+
+      if (error) throw error;
+      setReports(data || []);
+    } catch (error: any) {
+      toast.error("Failed to fetch reports: " + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAddReport = () => {
-    const newReport: Report = {
-      id: String(reports.length + 1),
-      reportId: formData.reportId || `R - ${String(reports.length + 1).padStart(3, '0')}`,
-      title: formData.title || "",
-      type: formData.type || "",
-      coursePopularity: formData.coursePopularity || "",
-      userEngagement: formData.userEngagement || "",
-      completionRate: formData.completionRate || "",
-      timePeriod: formData.timePeriod || "",
-      generatedAt: formData.generatedAt || new Date().toISOString().replace('T', ' ').substring(0, 19),
-      status: formData.status as "Completed" | "Failed" | "Scheduled" || "Scheduled",
-    };
-    setReports([...reports, newReport]);
-    setIsAddDialogOpen(false);
-    resetForm();
+  const filteredReports = reports.filter(report =>
+    report.report_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    report.report_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    report.report_type.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleDeleteReport = async () => {
+    if (!deletingReport) return;
+    
+    try {
+      const { error } = await supabase
+        .from('admin_reports')
+        .delete()
+        .eq('id', deletingReport.id);
+
+      if (error) throw error;
+      
+      setReports(reports.filter(r => r.id !== deletingReport.id));
+      setDeletingReport(null);
+      toast.success("Report deleted successfully");
+    } catch (error: any) {
+      toast.error("Failed to delete report: " + error.message);
+    }
   };
 
-  const handleEditReport = () => {
-    if (editingReport) {
-      setReports(reports.map(r => 
-        r.id === editingReport.id 
-          ? { ...r, ...formData } as Report
-          : r
-      ));
+  const generateReportId = () => {
+    const maxNum = reports.reduce((max, r) => {
+      const num = parseInt(r.report_id.replace('R-', ''));
+      return num > max ? num : max;
+    }, 0);
+    return `R-${String(maxNum + 1).padStart(3, '0')}`;
+  };
+
+  const handleAddReport = async () => {
+    try {
+      const newReportId = formData.report_id || generateReportId();
+      
+      const { data, error } = await supabase
+        .from('admin_reports')
+        .insert({
+          report_id: newReportId,
+          report_title: formData.report_title || "",
+          report_type: formData.report_type || "activity",
+          course_popularity: formData.course_popularity || "Medium",
+          completion_rate: formData.completion_rate || 0,
+          time_period: formData.time_period || "",
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setReports([data, ...reports]);
+      setIsAddDialogOpen(false);
+      resetForm();
+      toast.success("Report added successfully");
+    } catch (error: any) {
+      toast.error("Failed to add report: " + error.message);
+    }
+  };
+
+  const handleEditReport = async () => {
+    if (!editingReport) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('admin_reports')
+        .update({
+          report_id: formData.report_id,
+          report_title: formData.report_title,
+          report_type: formData.report_type,
+          course_popularity: formData.course_popularity,
+          completion_rate: formData.completion_rate,
+          time_period: formData.time_period,
+        })
+        .eq('id', editingReport.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setReports(reports.map(r => r.id === editingReport.id ? data : r));
       setEditingReport(null);
       resetForm();
+      toast.success("Report updated successfully");
+    } catch (error: any) {
+      toast.error("Failed to update report: " + error.message);
     }
   };
 
   const openEditDialog = (report: Report) => {
     setFormData({
-      reportId: report.reportId,
-      title: report.title,
-      type: report.type,
-      coursePopularity: report.coursePopularity,
-      userEngagement: report.userEngagement,
-      completionRate: report.completionRate,
-      timePeriod: report.timePeriod,
-      generatedAt: report.generatedAt,
-      status: report.status,
+      report_id: report.report_id,
+      report_title: report.report_title,
+      report_type: report.report_type,
+      course_popularity: report.course_popularity,
+      completion_rate: report.completion_rate,
+      time_period: report.time_period,
     });
     setEditingReport(report);
   };
 
   const resetForm = () => {
     setFormData({
-      reportId: "",
-      title: "",
-      type: "",
-      coursePopularity: "",
-      userEngagement: "",
-      completionRate: "",
-      timePeriod: "",
-      generatedAt: "",
-      status: "Scheduled",
+      report_id: "",
+      report_title: "",
+      report_type: "",
+      course_popularity: "",
+      completion_rate: 0,
+      time_period: "",
     });
   };
 
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case "Completed":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "Failed":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      case "Scheduled":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
+  const getPopularityStyle = (popularity: string) => {
+    switch (popularity.toLowerCase()) {
+      case 'high':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+      case 'low':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
       default:
-        return "bg-muted text-muted-foreground";
+        return 'bg-muted text-muted-foreground';
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="relative w-full sm:w-80">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by Report ID..."
+            placeholder="Search reports..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2">
+          <Plus className="h-4 w-4" />
           Add Report
         </Button>
       </div>
 
-      <div className="border rounded-lg">
-        <h3 className="text-lg font-semibold p-4 border-b">Reports</h3>
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -226,106 +239,106 @@ export function ReportsTable() {
               <TableHead>Report Title</TableHead>
               <TableHead>Report Type</TableHead>
               <TableHead>Course Popularity</TableHead>
-              <TableHead>User Engagement</TableHead>
               <TableHead>Completion Rate</TableHead>
               <TableHead>Time Period</TableHead>
               <TableHead>Generated At</TableHead>
-              <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredReports.map((report) => (
-              <TableRow key={report.id}>
-                <TableCell className="font-medium">{report.reportId}</TableCell>
-                <TableCell>{report.title}</TableCell>
-                <TableCell>{report.type}</TableCell>
-                <TableCell>{report.coursePopularity}</TableCell>
-                <TableCell>{report.userEngagement}</TableCell>
-                <TableCell>{report.completionRate}</TableCell>
-                <TableCell>{report.timePeriod}</TableCell>
-                <TableCell>{report.generatedAt}</TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-xs ${getStatusStyle(report.status)}`}>
-                    {report.status}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setViewingReport(report)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => openEditDialog(report)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDeletingReport(report)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+            {filteredReports.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  No reports found
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredReports.map((report) => (
+                <TableRow key={report.id}>
+                  <TableCell className="font-medium">{report.report_id}</TableCell>
+                  <TableCell>{report.report_title}</TableCell>
+                  <TableCell className="capitalize">{report.report_type}</TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPopularityStyle(report.course_popularity)}`}>
+                      {report.course_popularity}
+                    </span>
+                  </TableCell>
+                  <TableCell>{report.completion_rate}%</TableCell>
+                  <TableCell>{report.time_period}</TableCell>
+                  <TableCell>{report.generated_at}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setViewingReport(report)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEditDialog(report)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeletingReport(report)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
 
       {/* View Report Dialog */}
-      <Dialog open={!!viewingReport} onOpenChange={(open) => !open && setViewingReport(null)}>
-        <DialogContent className="max-w-3xl">
+      <Dialog open={!!viewingReport} onOpenChange={() => setViewingReport(null)}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>{viewingReport?.title}</DialogTitle>
-            <DialogDescription>
-              {viewingReport?.type} Report • {viewingReport?.reportId}
-            </DialogDescription>
+            <DialogTitle>Report Details</DialogTitle>
+            <DialogDescription>View report information</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Report ID</p>
-                <p className="font-medium">{viewingReport?.reportId}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Report Type</p>
-                <p className="font-medium">{viewingReport?.type}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Course Popularity</p>
-                <p className="font-medium">{viewingReport?.coursePopularity}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">User Engagement</p>
-                <p className="font-medium">{viewingReport?.userEngagement}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Completion Rate</p>
-                <p className="font-medium">{viewingReport?.completionRate}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Time Period</p>
-                <p className="font-medium">{viewingReport?.timePeriod}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Generated At</p>
-                <p className="font-medium">{viewingReport?.generatedAt}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Status</p>
-                <span className={`px-2 py-1 rounded-full text-xs ${getStatusStyle(viewingReport?.status || "")}`}>
-                  {viewingReport?.status}
-                </span>
+          {viewingReport && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Report ID</Label>
+                  <p className="font-medium">{viewingReport.report_id}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Report Title</Label>
+                  <p className="font-medium">{viewingReport.report_title}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Report Type</Label>
+                  <p className="font-medium capitalize">{viewingReport.report_type}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Course Popularity</Label>
+                  <p className="font-medium">{viewingReport.course_popularity}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Completion Rate</Label>
+                  <p className="font-medium">{viewingReport.completion_rate}%</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Time Period</Label>
+                  <p className="font-medium">{viewingReport.time_period}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Generated At</Label>
+                  <p className="font-medium">{viewingReport.generated_at}</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -340,124 +353,118 @@ export function ReportsTable() {
           }
         }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingReport ? "Edit Report" : "Add New Report"}</DialogTitle>
             <DialogDescription>
-              {editingReport ? "Update the report details below." : "Fill in the report details below."}
+              {editingReport ? "Update report information" : "Enter report details"}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="reportId">Report ID</Label>
-              <Input
-                id="reportId"
-                value={formData.reportId}
-                onChange={(e) => setFormData({ ...formData, reportId: e.target.value })}
-                placeholder="R - 001"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="title">Report Title</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Enter report title"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="type">Report Type</Label>
-              <Input
-                id="type"
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                placeholder="Activity, Performance, etc."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="coursePopularity">Course Popularity</Label>
-              <Input
-                id="coursePopularity"
-                value={formData.coursePopularity}
-                onChange={(e) => setFormData({ ...formData, coursePopularity: e.target.value })}
-                placeholder="High, Medium, Low"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="userEngagement">User Engagement</Label>
-              <Input
-                id="userEngagement"
-                value={formData.userEngagement}
-                onChange={(e) => setFormData({ ...formData, userEngagement: e.target.value })}
-                placeholder="85%"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="completionRate">Completion Rate</Label>
-              <Input
-                id="completionRate"
-                value={formData.completionRate}
-                onChange={(e) => setFormData({ ...formData, completionRate: e.target.value })}
-                placeholder="72%"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="timePeriod">Time Period</Label>
-              <Input
-                id="timePeriod"
-                value={formData.timePeriod}
-                onChange={(e) => setFormData({ ...formData, timePeriod: e.target.value })}
-                placeholder="January 2025"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="generatedAt">Generated At</Label>
-              <Input
-                id="generatedAt"
-                value={formData.generatedAt}
-                onChange={(e) => setFormData({ ...formData, generatedAt: e.target.value })}
-                placeholder="2025-02-01 09:00:00"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => setFormData({ ...formData, status: value as "Completed" | "Failed" | "Scheduled" })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                  <SelectItem value="Failed">Failed</SelectItem>
-                  <SelectItem value="Scheduled">Scheduled</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="report_id">Report ID</Label>
+                <Input
+                  id="report_id"
+                  value={formData.report_id}
+                  onChange={(e) => setFormData({ ...formData, report_id: e.target.value })}
+                  placeholder="R-001"
+                  maxLength={5}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="report_title">Report Title</Label>
+                <Input
+                  id="report_title"
+                  value={formData.report_title}
+                  onChange={(e) => setFormData({ ...formData, report_title: e.target.value })}
+                  placeholder="Monthly User Activity"
+                  maxLength={120}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="report_type">Report Type</Label>
+                <Select
+                  value={formData.report_type}
+                  onValueChange={(value) => setFormData({ ...formData, report_type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="activity">Activity</SelectItem>
+                    <SelectItem value="performance">Performance</SelectItem>
+                    <SelectItem value="financial">Financial</SelectItem>
+                    <SelectItem value="system">System</SelectItem>
+                    <SelectItem value="analytics">Analytics</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="course_popularity">Course Popularity</Label>
+                <Select
+                  value={formData.course_popularity}
+                  onValueChange={(value) => setFormData({ ...formData, course_popularity: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select popularity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="completion_rate">Completion Rate (%)</Label>
+                <Input
+                  id="completion_rate"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={formData.completion_rate}
+                  onChange={(e) => setFormData({ ...formData, completion_rate: parseInt(e.target.value) || 0 })}
+                  placeholder="65"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="time_period">Time Period</Label>
+                <Input
+                  id="time_period"
+                  value={formData.time_period}
+                  onChange={(e) => setFormData({ ...formData, time_period: e.target.value })}
+                  placeholder="JAN-2025"
+                  maxLength={8}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsAddDialogOpen(false);
-              setEditingReport(null);
-              resetForm();
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAddDialogOpen(false);
+                setEditingReport(null);
+                resetForm();
+              }}
+            >
               Cancel
             </Button>
             <Button onClick={editingReport ? handleEditReport : handleAddReport}>
-              {editingReport ? "Update Report" : "Add Report"}
+              {editingReport ? "Save Changes" : "Add Report"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
       <DeleteConfirmDialog
         open={!!deletingReport}
         onOpenChange={(open) => !open && setDeletingReport(null)}
         onConfirm={handleDeleteReport}
         title="Delete Report"
-        description={`Are you sure you want to delete "${deletingReport?.title}"? This action cannot be undone.`}
+        description={`Are you sure you want to delete "${deletingReport?.report_title}"? This action cannot be undone.`}
       />
     </div>
   );
