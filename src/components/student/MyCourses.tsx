@@ -82,12 +82,25 @@ export function MyCourses({ userId }: { userId: string }) {
 
   const fetchPrerequisites = async () => {
     setPrerequisitesLoading(true);
-    // Fetch prerequisites that have course_id matching courses in student_courses table
+    
+    // First fetch all courses to get course_id -> title mapping
     const { data: coursesData } = await supabase
       .from("student_courses")
-      .select("course_id");
+      .select("course_id, title");
     
-    const courseIds = coursesData?.map(c => c.course_id.trim()) || [];
+    if (!coursesData || coursesData.length === 0) {
+      setPrerequisites([]);
+      setPrerequisitesLoading(false);
+      return;
+    }
+    
+    // Create a map of course_id to title from student_courses
+    const courseMap = new Map<string, string>();
+    coursesData.forEach(c => {
+      courseMap.set(c.course_id.trim(), c.title);
+    });
+    
+    const courseIds = Array.from(courseMap.keys());
     
     const { data, error } = await supabase
       .from("student_prerequisites")
@@ -98,9 +111,14 @@ export function MyCourses({ userId }: { userId: string }) {
       toast({ title: "Error", description: "Failed to fetch prerequisites", variant: "destructive" });
     } else {
       // Filter to only show prerequisites for courses that exist in student_courses
-      const filteredPrereqs = (data || []).filter(p => 
-        courseIds.includes(p.course_id.trim())
-      );
+      // And get the title from student_courses table instead
+      const filteredPrereqs = (data || [])
+        .filter(p => courseIds.includes(p.course_id.trim()))
+        .map(p => ({
+          ...p,
+          // Override course_title with the title from student_courses table
+          course_title: courseMap.get(p.course_id.trim()) || p.course_title
+        }));
       setPrerequisites(filteredPrereqs);
     }
     setPrerequisitesLoading(false);
