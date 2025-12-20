@@ -665,6 +665,30 @@ export type Database = {
           },
         ]
       }
+      student_prerequisites: {
+        Row: {
+          course_id: string
+          course_title: string
+          created_at: string | null
+          id: string
+          prerequisite_course_id: string
+        }
+        Insert: {
+          course_id: string
+          course_title: string
+          created_at?: string | null
+          id?: string
+          prerequisite_course_id: string
+        }
+        Update: {
+          course_id?: string
+          course_title?: string
+          created_at?: string | null
+          id?: string
+          prerequisite_course_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
