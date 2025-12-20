@@ -22,11 +22,11 @@ interface StudentCourse {
   created_at: string | null;
 }
 
-interface Prerequisite {
+interface StudentPrerequisite {
   id: string;
   course_id: string;
-  prerequisite_text: string | null;
-  prerequisite_course_id: string | null;
+  course_title: string;
+  prerequisite_course_id: string;
 }
 
 interface StudentEnrollment {
@@ -37,17 +37,11 @@ interface StudentEnrollment {
   created_at: string;
 }
 
-const mockPrerequisites: Prerequisite[] = [
-  { id: "PRE-001", course_id: "CSE-102", prerequisite_text: "Basic Python knowledge", prerequisite_course_id: "CSE-101" },
-  { id: "PRE-002", course_id: "CSE-103", prerequisite_text: "Data Science Fundamentals", prerequisite_course_id: "CSE-102" },
-  { id: "PRE-003", course_id: "CSE-104", prerequisite_text: "Statistics knowledge", prerequisite_course_id: null },
-  { id: "PRE-004", course_id: "CSE-105", prerequisite_text: "HTML/CSS basics", prerequisite_course_id: null },
-  { id: "PRE-005", course_id: "CSE-106", prerequisite_text: "Basic computer skills", prerequisite_course_id: null },
-];
 
 export function MyCourses({ userId }: { userId: string }) {
   const [courses, setCourses] = useState<StudentCourse[]>([]);
-  const [prerequisites, setPrerequisites] = useState<Prerequisite[]>(mockPrerequisites);
+  const [prerequisites, setPrerequisites] = useState<StudentPrerequisite[]>([]);
+  const [prerequisitesLoading, setPrerequisitesLoading] = useState(true);
   const [enrollments, setEnrollments] = useState<StudentEnrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrollmentsLoading, setEnrollmentsLoading] = useState(true);
@@ -66,7 +60,7 @@ export function MyCourses({ userId }: { userId: string }) {
   const [editingCourse, setEditingCourse] = useState<StudentCourse | null>(null);
   const [deletingCourseId, setDeletingCourseId] = useState<string | null>(null);
   const [deletingEnrollmentId, setDeletingEnrollmentId] = useState<string | null>(null);
-  const [viewingPrereq, setViewingPrereq] = useState<Prerequisite | null>(null);
+  const [viewingPrereq, setViewingPrereq] = useState<StudentPrerequisite | null>(null);
   const [selectedCourseForEnrollment, setSelectedCourseForEnrollment] = useState<string>("");
   
   const [formData, setFormData] = useState({
@@ -83,7 +77,34 @@ export function MyCourses({ userId }: { userId: string }) {
   useEffect(() => {
     fetchCourses();
     fetchEnrollments();
+    fetchPrerequisites();
   }, []);
+
+  const fetchPrerequisites = async () => {
+    setPrerequisitesLoading(true);
+    // Fetch prerequisites that have course_id matching courses in student_courses table
+    const { data: coursesData } = await supabase
+      .from("student_courses")
+      .select("course_id");
+    
+    const courseIds = coursesData?.map(c => c.course_id.trim()) || [];
+    
+    const { data, error } = await supabase
+      .from("student_prerequisites")
+      .select("*")
+      .order("course_id", { ascending: true });
+    
+    if (error) {
+      toast({ title: "Error", description: "Failed to fetch prerequisites", variant: "destructive" });
+    } else {
+      // Filter to only show prerequisites for courses that exist in student_courses
+      const filteredPrereqs = (data || []).filter(p => 
+        courseIds.includes(p.course_id.trim())
+      );
+      setPrerequisites(filteredPrereqs);
+    }
+    setPrerequisitesLoading(false);
+  };
 
   const fetchCourses = async () => {
     setLoading(true);
@@ -488,7 +509,7 @@ export function MyCourses({ userId }: { userId: string }) {
           <Card>
             <CardHeader>
               <CardTitle>Prerequisites</CardTitle>
-              <CardDescription>View course prerequisites</CardDescription>
+              <CardDescription>View course prerequisites (only showing courses available in the Courses table)</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="relative mb-4">
@@ -501,44 +522,68 @@ export function MyCourses({ userId }: { userId: string }) {
                 />
               </div>
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Course ID</TableHead>
-                    <TableHead>Prerequisite</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPrerequisites.map(prereq => (
-                    <TableRow key={prereq.id}>
-                      <TableCell>
-                        <Badge variant="outline">{prereq.course_id.includes("CSC -") ? prereq.course_id : `CSC - ${prereq.course_id.slice(-3)}`}</Badge>
-                      </TableCell>
-                      <TableCell>{prereq.prerequisite_text || prereq.prerequisite_course_id || "N/A"}</TableCell>
-                      <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="sm" onClick={() => setViewingPrereq(prereq)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Prerequisite Details</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-2">
-                              <p><strong>Course ID:</strong> {prereq.course_id.includes("CSC -") ? prereq.course_id : `CSC - ${prereq.course_id.slice(-3)}`}</p>
-                              <p><strong>Prerequisite Text:</strong> {prereq.prerequisite_text || "N/A"}</p>
-                              <p><strong>Prerequisite Course ID:</strong> {prereq.prerequisite_course_id ? (prereq.prerequisite_course_id.includes("CSC -") ? prereq.prerequisite_course_id : `CSC - ${prereq.prerequisite_course_id.slice(-3)}`) : "N/A"}</p>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
+              {prerequisitesLoading ? (
+                <p className="text-center text-muted-foreground py-4">Loading prerequisites...</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Course ID</TableHead>
+                      <TableHead>Course Title</TableHead>
+                      <TableHead>Prerequisite Course ID</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPrerequisites.map(prereq => (
+                      <TableRow key={prereq.id}>
+                        <TableCell>
+                          <Badge variant="outline">{prereq.course_id.trim()}</Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">{prereq.course_title}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{prereq.prerequisite_course_id.trim()}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" onClick={() => setViewingPrereq(prereq)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Prerequisite Details</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div className="space-y-1">
+                                  <p className="text-sm text-muted-foreground">Course ID</p>
+                                  <p className="font-medium">{prereq.course_id.trim()}</p>
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-sm text-muted-foreground">Course Title</p>
+                                  <p className="font-medium">{prereq.course_title}</p>
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-sm text-muted-foreground">Prerequisite Course ID</p>
+                                  <p className="font-medium">{prereq.prerequisite_course_id.trim()}</p>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredPrerequisites.length === 0 && !prerequisitesLoading && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-4">
+                          No prerequisites found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
