@@ -78,10 +78,20 @@ export function Discussions({ userId }: { userId: string }) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [currentUserName, setCurrentUserName] = useState("You");
+  const [authenticatedUserId, setAuthenticatedUserId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
+    // Get the authenticated user ID from the session
+    const getAuthenticatedUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setAuthenticatedUserId(session.user.id);
+      }
+    };
+    getAuthenticatedUser();
+    
     fetchDiscussions();
     fetchEnrolledCourses();
     fetchCurrentUserName();
@@ -210,15 +220,23 @@ export function Discussions({ userId }: { userId: string }) {
       return;
     }
 
+    // Get fresh session to ensure we have a valid token
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      toast({ title: "Error", description: "You must be logged in to create a discussion", variant: "destructive" });
+      return;
+    }
+
     const { error } = await supabase.from("discussions").insert({
       title: newDiscussion.title,
       body: newDiscussion.body,
       course_id: newDiscussion.course_id,
-      created_by_user_id: userId,
+      created_by_user_id: session.user.id,
     });
 
     if (error) {
-      toast({ title: "Error", description: "Failed to create discussion", variant: "destructive" });
+      console.error("Create discussion error:", error);
+      toast({ title: "Error", description: "Failed to create discussion: " + error.message, variant: "destructive" });
     } else {
       toast({ title: "Success", description: "Discussion created!" });
       setIsAddDialogOpen(false);
@@ -261,15 +279,23 @@ export function Discussions({ userId }: { userId: string }) {
       return;
     }
 
+    // Get fresh session to ensure we have a valid token
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      toast({ title: "Error", description: "You must be logged in to comment", variant: "destructive" });
+      return;
+    }
+
     const { error } = await supabase.from("comments").insert({
       discussion_id: selectedDiscussion.discussion_id,
-      user_id: userId,
+      user_id: session.user.id,
       comment_text: newComment,
       comment_time: new Date().toISOString()
     });
 
     if (error) {
-      toast({ title: "Error", description: "Failed to send comment", variant: "destructive" });
+      console.error("Send comment error:", error);
+      toast({ title: "Error", description: "Failed to send comment: " + error.message, variant: "destructive" });
     } else {
       setNewComment("");
       fetchComments(selectedDiscussion.discussion_id);
