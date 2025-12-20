@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,16 +29,12 @@ interface Prerequisite {
   prerequisite_course_id: string | null;
 }
 
-interface Enrollment {
-  id: string;
+interface StudentEnrollment {
+  enrollment_id: string;
   course_id: string;
-  enrolled_at: string;
-  status: string;
-  progress: number | null;
-  courses: {
-    title: string;
-    category: string;
-  };
+  title: string;
+  learning_status: string;
+  created_at: string;
 }
 
 const mockPrerequisites: Prerequisite[] = [
@@ -49,25 +45,12 @@ const mockPrerequisites: Prerequisite[] = [
   { id: "PRE-005", course_id: "CSE-106", prerequisite_text: "Basic computer skills", prerequisite_course_id: null },
 ];
 
-const mockEnrollments: Enrollment[] = [
-  { id: "EN-1", course_id: "CSE-101", enrolled_at: "2024-01-15T10:30:00Z", status: "in_progress", progress: 65, courses: { title: "Introduction to Python", category: "Programming" } },
-  { id: "EN-2", course_id: "CSE-102", enrolled_at: "2024-02-20T14:15:00Z", status: "completed", progress: 100, courses: { title: "Data Science Fundamentals", category: "Data Science" } },
-  { id: "EN-3", course_id: "CSE-103", enrolled_at: "2024-03-10T09:00:00Z", status: "in_progress", progress: 30, courses: { title: "Web Development Basics", category: "Web Development" } },
-  { id: "EN-4", course_id: "CSE-104", enrolled_at: "2024-03-25T11:45:00Z", status: "not_started", progress: 0, courses: { title: "Machine Learning Intro", category: "AI/ML" } },
-  { id: "EN-5", course_id: "CSE-105", enrolled_at: "2024-04-01T16:20:00Z", status: "in_progress", progress: 45, courses: { title: "Database Management", category: "Database" } },
-];
-
-// Helper function to format enrollment ID as "EN-1" format
-const formatEnrollmentId = (id: string, index: number = 0): string => {
-  if (id.includes("EN-")) return id;
-  return `EN-${index + 1}`;
-};
-
 export function MyCourses({ userId }: { userId: string }) {
   const [courses, setCourses] = useState<StudentCourse[]>([]);
   const [prerequisites, setPrerequisites] = useState<Prerequisite[]>(mockPrerequisites);
-  const [enrollments, setEnrollments] = useState<Enrollment[]>(mockEnrollments);
+  const [enrollments, setEnrollments] = useState<StudentEnrollment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [enrollmentsLoading, setEnrollmentsLoading] = useState(true);
   
   const [courseSearchTerm, setCourseSearchTerm] = useState("");
   const [prereqSearchTerm, setPrereqSearchTerm] = useState("");
@@ -76,10 +59,15 @@ export function MyCourses({ userId }: { userId: string }) {
   const [isAddCourseDialogOpen, setIsAddCourseDialogOpen] = useState(false);
   const [isEditCourseDialogOpen, setIsEditCourseDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEnrollDialogOpen, setIsEnrollDialogOpen] = useState(false);
+  const [isDeleteEnrollmentDialogOpen, setIsDeleteEnrollmentDialogOpen] = useState(false);
   const [viewingCourse, setViewingCourse] = useState<StudentCourse | null>(null);
+  const [viewingEnrollment, setViewingEnrollment] = useState<StudentEnrollment | null>(null);
   const [editingCourse, setEditingCourse] = useState<StudentCourse | null>(null);
   const [deletingCourseId, setDeletingCourseId] = useState<string | null>(null);
+  const [deletingEnrollmentId, setDeletingEnrollmentId] = useState<string | null>(null);
   const [viewingPrereq, setViewingPrereq] = useState<Prerequisite | null>(null);
+  const [selectedCourseForEnrollment, setSelectedCourseForEnrollment] = useState<string>("");
   
   const [formData, setFormData] = useState({
     course_id: "",
@@ -94,6 +82,7 @@ export function MyCourses({ userId }: { userId: string }) {
 
   useEffect(() => {
     fetchCourses();
+    fetchEnrollments();
   }, []);
 
   const fetchCourses = async () => {
@@ -109,6 +98,86 @@ export function MyCourses({ userId }: { userId: string }) {
       setCourses(data || []);
     }
     setLoading(false);
+  };
+
+  const fetchEnrollments = async () => {
+    setEnrollmentsLoading(true);
+    const { data, error } = await supabase
+      .from("student_enrollments")
+      .select("*")
+      .order("created_at", { ascending: false });
+    
+    if (error) {
+      toast({ title: "Error", description: "Failed to fetch enrollments", variant: "destructive" });
+    } else {
+      setEnrollments(data || []);
+    }
+    setEnrollmentsLoading(false);
+  };
+
+  const generateEnrollmentId = () => {
+    const maxId = enrollments.reduce((max, e) => {
+      const num = parseInt(e.enrollment_id.replace("EN-", "")) || 0;
+      return num > max ? num : max;
+    }, 0);
+    return `EN-${maxId + 1}`;
+  };
+
+  const handleEnrollInCourse = async () => {
+    if (!selectedCourseForEnrollment) {
+      toast({ title: "Error", description: "Please select a course to enroll", variant: "destructive" });
+      return;
+    }
+
+    const selectedCourse = courses.find(c => c.course_id === selectedCourseForEnrollment);
+    if (!selectedCourse) {
+      toast({ title: "Error", description: "Course not found", variant: "destructive" });
+      return;
+    }
+
+    // Check if already enrolled
+    const alreadyEnrolled = enrollments.some(e => e.course_id === selectedCourseForEnrollment);
+    if (alreadyEnrolled) {
+      toast({ title: "Error", description: "You are already enrolled in this course", variant: "destructive" });
+      return;
+    }
+
+    const newEnrollmentId = generateEnrollmentId();
+    const { error } = await supabase
+      .from("student_enrollments")
+      .insert({
+        enrollment_id: newEnrollmentId,
+        course_id: selectedCourse.course_id,
+        title: selectedCourse.title,
+        learning_status: "Not Started",
+      });
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Successfully enrolled in course!" });
+      setIsEnrollDialogOpen(false);
+      setSelectedCourseForEnrollment("");
+      fetchEnrollments();
+    }
+  };
+
+  const handleDeleteEnrollment = async () => {
+    if (!deletingEnrollmentId) return;
+
+    const { error } = await supabase
+      .from("student_enrollments")
+      .delete()
+      .eq("enrollment_id", deletingEnrollmentId);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Enrollment deleted successfully!" });
+      setIsDeleteEnrollmentDialogOpen(false);
+      setDeletingEnrollmentId(null);
+      fetchEnrollments();
+    }
   };
 
   const handleAddCourse = async () => {
@@ -219,15 +288,13 @@ export function MyCourses({ userId }: { userId: string }) {
   );
 
   const filteredEnrollments = enrollments.filter(e =>
-    e.id.toLowerCase().includes(enrollmentSearchTerm.toLowerCase()) ||
+    e.enrollment_id.toLowerCase().includes(enrollmentSearchTerm.toLowerCase()) ||
     e.course_id.toLowerCase().includes(enrollmentSearchTerm.toLowerCase())
   );
 
-  const getLessonStatus = (progress: number | null, status: string) => {
-    if (status === "completed") return "Completed";
-    if (progress === 0) return "Not Started";
-    if (progress && progress > 0) return "In Progress";
-    return "Not Started";
+  const getAvailableCoursesForEnrollment = () => {
+    const enrolledCourseIds = enrollments.map(e => e.course_id);
+    return courses.filter(c => !enrolledCourseIds.includes(c.course_id) && c.status === "active");
   };
 
   return (
@@ -475,9 +542,15 @@ export function MyCourses({ userId }: { userId: string }) {
         {/* Enrollments Table */}
         <TabsContent value="enrollments">
           <Card>
-            <CardHeader>
-              <CardTitle>Enrollments</CardTitle>
-              <CardDescription>View your course enrollments</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Enrollments</CardTitle>
+                <CardDescription>Your course enrollments</CardDescription>
+              </div>
+              <Button onClick={() => setIsEnrollDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Enroll in Course
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="relative mb-4">
@@ -490,40 +563,137 @@ export function MyCourses({ userId }: { userId: string }) {
                 />
               </div>
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Enrollment ID</TableHead>
-                    <TableHead>Course ID</TableHead>
-                    <TableHead>Course Title</TableHead>
-                    <TableHead>Lesson Status</TableHead>
-                    <TableHead>Time Stamp</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEnrollments.map((enrollment, index) => (
-                    <TableRow key={enrollment.id}>
-                      <TableCell>{formatEnrollmentId(enrollment.id, index)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{enrollment.course_id}</Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">{enrollment.courses.title}</TableCell>
-                      <TableCell>
-                        <Badge variant={
-                          getLessonStatus(enrollment.progress, enrollment.status) === "Completed" ? "default" :
-                          getLessonStatus(enrollment.progress, enrollment.status) === "In Progress" ? "secondary" :
-                          "outline"
-                        }>
-                          {getLessonStatus(enrollment.progress, enrollment.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(enrollment.enrolled_at).toLocaleString()}</TableCell>
+              {enrollmentsLoading ? (
+                <p className="text-center text-muted-foreground py-4">Loading enrollments...</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Enrollment ID</TableHead>
+                      <TableHead>Course ID</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Learning Status</TableHead>
+                      <TableHead>Created At</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredEnrollments.map((enrollment) => (
+                      <TableRow key={enrollment.enrollment_id}>
+                        <TableCell>
+                          <Badge variant="outline">{enrollment.enrollment_id}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{enrollment.course_id}</Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">{enrollment.title}</TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            enrollment.learning_status === "Completed" ? "default" :
+                            enrollment.learning_status === "In Progress" ? "secondary" :
+                            "outline"
+                          }>
+                            {enrollment.learning_status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{enrollment.created_at}</TableCell>
+                        <TableCell className="flex gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" onClick={() => setViewingEnrollment(enrollment)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Enrollment Details</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-2">
+                                <p><strong>Enrollment ID:</strong> {enrollment.enrollment_id}</p>
+                                <p><strong>Course ID:</strong> {enrollment.course_id}</p>
+                                <p><strong>Title:</strong> {enrollment.title}</p>
+                                <p><strong>Learning Status:</strong> {enrollment.learning_status}</p>
+                                <p><strong>Created At:</strong> {enrollment.created_at}</p>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => {
+                              setDeletingEnrollmentId(enrollment.enrollment_id);
+                              setIsDeleteEnrollmentDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredEnrollments.length === 0 && !enrollmentsLoading && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-4">
+                          No enrollments found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
+
+          {/* Enroll in Course Dialog */}
+          <Dialog open={isEnrollDialogOpen} onOpenChange={setIsEnrollDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Enroll in a Course</DialogTitle>
+                <DialogDescription>Select a course to enroll in</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Select Course</Label>
+                  <Select value={selectedCourseForEnrollment} onValueChange={setSelectedCourseForEnrollment}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a course..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAvailableCoursesForEnrollment().map((course) => (
+                        <SelectItem key={course.course_id} value={course.course_id}>
+                          {course.course_id} - {course.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {getAvailableCoursesForEnrollment().length === 0 && (
+                    <p className="text-sm text-muted-foreground">No courses available for enrollment</p>
+                  )}
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsEnrollDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={handleEnrollInCourse} disabled={!selectedCourseForEnrollment}>
+                    Enroll
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Delete Enrollment Confirmation Dialog */}
+          <Dialog open={isDeleteEnrollmentDialogOpen} onOpenChange={setIsDeleteEnrollmentDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete Enrollment</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete this enrollment? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsDeleteEnrollmentDialogOpen(false)}>Cancel</Button>
+                <Button variant="destructive" onClick={handleDeleteEnrollment}>Delete</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
       </Tabs>
     </div>
