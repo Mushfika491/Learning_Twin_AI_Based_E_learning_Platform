@@ -61,6 +61,18 @@ export function InstructorMyCourses() {
     prerequisite_course_id: "",
     prerequisite_text: "",
   });
+
+  // Rating CRUD states
+  const [isRatingDialogOpen, setIsRatingDialogOpen] = useState(false);
+  const [editingRating, setEditingRating] = useState<Rating | null>(null);
+  const [deleteRatingId, setDeleteRatingId] = useState<string | null>(null);
+  const [selectedRating, setSelectedRating] = useState<Rating | null>(null);
+  const [ratingFormData, setRatingFormData] = useState({
+    course_id: "",
+    student_id: "",
+    rating_score: 5,
+    content: "",
+  });
   
   const { toast } = useToast();
 
@@ -269,6 +281,77 @@ export function InstructorMyCourses() {
     setIsPrereqDialogOpen(false);
   };
 
+  // Rating CRUD handlers
+  const handleRatingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (editingRating) {
+      const { error } = await supabase
+        .from("ratings_reviews")
+        .update({
+          course_id: ratingFormData.course_id,
+          rating_score: ratingFormData.rating_score,
+          content: ratingFormData.content || null,
+        })
+        .eq("id", editingRating.id);
+
+      if (error) {
+        toast({ title: "Error", description: "Failed to update rating", variant: "destructive" });
+      } else {
+        toast({ title: "Success", description: "Rating updated" });
+        fetchData();
+        resetRatingForm();
+      }
+    } else {
+      const { error } = await supabase
+        .from("ratings_reviews")
+        .insert([{
+          course_id: ratingFormData.course_id,
+          student_id: userId,
+          rating_score: ratingFormData.rating_score,
+          content: ratingFormData.content || null,
+        }]);
+
+      if (error) {
+        toast({ title: "Error", description: "Failed to create rating", variant: "destructive" });
+      } else {
+        toast({ title: "Success", description: "Rating created" });
+        fetchData();
+        resetRatingForm();
+      }
+    }
+  };
+
+  const handleRatingDelete = async () => {
+    if (!deleteRatingId) return;
+    const { error } = await supabase.from("ratings_reviews").delete().eq("id", deleteRatingId);
+
+    if (error) {
+      toast({ title: "Error", description: "Failed to delete rating", variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Rating deleted" });
+      fetchData();
+    }
+    setDeleteRatingId(null);
+  };
+
+  const handleRatingEdit = (rating: Rating) => {
+    setEditingRating(rating);
+    setRatingFormData({
+      course_id: rating.course_id,
+      student_id: rating.student_id,
+      rating_score: rating.rating_score,
+      content: rating.content || "",
+    });
+    setIsRatingDialogOpen(true);
+  };
+
+  const resetRatingForm = () => {
+    setRatingFormData({ course_id: "", student_id: "", rating_score: 5, content: "" });
+    setEditingRating(null);
+    setIsRatingDialogOpen(false);
+  };
+
   const formatCourseId = (courseId: string, index: number = 0) => {
     const courseFormats = ["CSC - 101", "CSC - 202", "CSC - 303", "CSC - 405", "CSC - 210", "CSC - 315", "CSC - 420"];
     const idx = courses.findIndex(c => c.id === courseId);
@@ -319,7 +402,13 @@ export function InstructorMyCourses() {
     : prerequisites;
 
   const filteredRatings = ratingsSearchTerm
-    ? ratings.filter((r) => r.course_id.toLowerCase().includes(ratingsSearchTerm.toLowerCase()))
+    ? ratings.filter((r) => {
+        const courseTitle = getCourseTitle(r.course_id).toLowerCase();
+        const searchLower = ratingsSearchTerm.toLowerCase();
+        return courseTitle.includes(searchLower) || 
+               (r.content || "").toLowerCase().includes(searchLower) ||
+               r.course_id.toLowerCase().includes(searchLower);
+      })
     : ratings;
 
   return (
@@ -473,12 +562,20 @@ export function InstructorMyCourses() {
         <TabsContent value="ratings">
           <Card>
             <CardHeader>
-              <CardTitle>Ratings & Reviews</CardTitle>
-              <CardDescription>Student feedback on your courses</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Ratings & Reviews</CardTitle>
+                  <CardDescription>Student feedback on your courses</CardDescription>
+                </div>
+                <Button onClick={() => { resetRatingForm(); setIsRatingDialogOpen(true); }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Rating
+                </Button>
+              </div>
               <div className="flex items-center gap-2 mt-2">
                 <Search className="h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by Course ID..."
+                  placeholder="Search by Course Title..."
                   value={ratingsSearchTerm}
                   onChange={(e) => setRatingsSearchTerm(e.target.value)}
                   className="max-w-sm"
@@ -493,8 +590,9 @@ export function InstructorMyCourses() {
                     <TableHead>Course ID</TableHead>
                     <TableHead>Student ID</TableHead>
                     <TableHead>Rating Score</TableHead>
-                    <TableHead>Content</TableHead>
+                    <TableHead>Review Text</TableHead>
                     <TableHead>Created At</TableHead>
+                    <TableHead className="text-right">Details</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -503,14 +601,34 @@ export function InstructorMyCourses() {
                       <TableCell className="font-mono text-xs">{formatRatingId(rating.id, index)}</TableCell>
                       <TableCell className="font-medium">{formatCourseId(rating.course_id, index)}</TableCell>
                       <TableCell className="font-mono text-xs">{formatStudentId(rating.student_id, index)}</TableCell>
-                      <TableCell>{rating.rating_score}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-4 w-4 ${i < rating.rating_score ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                            />
+                          ))}
+                        </div>
+                      </TableCell>
                       <TableCell className="max-w-xs truncate">{rating.content || "-"}</TableCell>
                       <TableCell>{rating.created_at ? new Date(rating.created_at).toLocaleDateString() : "-"}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedRating(rating)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleRatingEdit(rating)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteRatingId(rating.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                   {filteredRatings.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         No ratings yet
                       </TableCell>
                     </TableRow>
@@ -704,6 +822,124 @@ export function InstructorMyCourses() {
         onConfirm={handlePrereqDelete}
         title="Delete Prerequisite"
         description="Are you sure you want to delete this prerequisite? This action cannot be undone."
+      />
+
+      {/* Rating Detail Modal */}
+      <Dialog open={!!selectedRating} onOpenChange={() => setSelectedRating(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rating Details</DialogTitle>
+          </DialogHeader>
+          {selectedRating && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-muted-foreground">Rating ID</Label>
+                <p className="font-medium">{formatRatingId(selectedRating.id)}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Course</Label>
+                <p className="font-medium">{getCourseTitle(selectedRating.course_id)}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Student ID</Label>
+                <p className="font-medium">{formatStudentId(selectedRating.student_id)}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Rating Score</Label>
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-5 w-5 ${i < selectedRating.rating_score ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                    />
+                  ))}
+                  <span className="ml-2 font-medium">({selectedRating.rating_score}/5)</span>
+                </div>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Review Text</Label>
+                <p className="font-medium">{selectedRating.content || "No review provided"}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Created At</Label>
+                <p className="font-medium">
+                  {selectedRating.created_at ? new Date(selectedRating.created_at).toLocaleString() : "-"}
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Rating CRUD Dialog */}
+      <Dialog open={isRatingDialogOpen} onOpenChange={setIsRatingDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingRating ? "Edit Rating" : "Add Rating"}</DialogTitle>
+            <DialogDescription>
+              {editingRating ? "Update rating details" : "Create a new rating for a course"}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleRatingSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Course</Label>
+              <Select 
+                value={ratingFormData.course_id} 
+                onValueChange={(v) => setRatingFormData({ ...ratingFormData, course_id: v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
+                <SelectContent>
+                  {courses.map((course) => (
+                    <SelectItem key={course.id} value={course.id}>
+                      {course.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Rating Score</Label>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((score) => (
+                  <Button
+                    key={score}
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setRatingFormData({ ...ratingFormData, rating_score: score })}
+                  >
+                    <Star
+                      className={`h-6 w-6 ${score <= ratingFormData.rating_score ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                    />
+                  </Button>
+                ))}
+                <span className="ml-2 text-sm text-muted-foreground">({ratingFormData.rating_score}/5)</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Review Text</Label>
+              <Textarea
+                value={ratingFormData.content}
+                onChange={(e) => setRatingFormData({ ...ratingFormData, content: e.target.value })}
+                placeholder="Write your review here..."
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={resetRatingForm}>Cancel</Button>
+              <Button type="submit" disabled={!ratingFormData.course_id}>
+                {editingRating ? "Update" : "Create"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!deleteRatingId}
+        onOpenChange={() => setDeleteRatingId(null)}
+        onConfirm={handleRatingDelete}
+        title="Delete Rating"
+        description="Are you sure you want to delete this rating? This action cannot be undone."
       />
     </div>
   );
