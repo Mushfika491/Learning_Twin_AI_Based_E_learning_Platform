@@ -7,6 +7,7 @@ import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { UserManagementTable } from "@/components/admin/UserManagementTable";
 import { ReportsTable } from "@/components/admin/ReportsTable";
 import { SystemSettingsTable } from "@/components/admin/SystemSettingsTable";
+import { ActivityLogsTable } from "@/components/admin/ActivityLogsTable";
 import { AdminProfileTable } from "@/components/admin/AdminProfileTable";
 
 const AdminDashboard = () => {
@@ -59,6 +60,8 @@ const AdminDashboard = () => {
         return <ReportsTable />;
       case "settings":
         return <SystemSettingsTable />;
+      case "logs":
+        return <ActivityLogsTable />;
       case "profile":
         return <AdminProfileTable />;
       default:
@@ -74,6 +77,8 @@ const AdminDashboard = () => {
         return { title: "Reports", description: "View and manage system reports" };
       case "settings":
         return { title: "System Settings", description: "Configure system settings" };
+      case "logs":
+        return { title: "Activity Logs", description: "View and manage system activity logs" };
       case "profile":
         return { title: "My Profile", description: "Manage your profile information" };
       default:
