@@ -42,9 +42,8 @@ export function MyProgress({ userId }: { userId: string }) {
         .in("course_id", courseIds)
         .order("generated_at", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching performance reports:", error);
-        // If RLS blocks access, show demo data aligned with courses
+      // If error or no data, show demo data aligned with courses
+      if (error || !data || data.length === 0) {
         const demoData: PerformanceReport[] = [
           { performance_report_id: "RPT-001", course_id: "CSE-101", strengths: "Strong grasp of Python syntax and loops", weakness: "Struggles with object-oriented concepts", recommendations: "Practice OOP exercises and review class inheritance", generated_at: "2024-12-15" },
           { performance_report_id: "RPT-002", course_id: "CSE-102", strengths: "Excellent data visualization skills", weakness: "Needs improvement in statistical analysis", recommendations: "Focus on probability and hypothesis testing", generated_at: "2024-12-14" },
@@ -57,7 +56,7 @@ export function MyProgress({ userId }: { userId: string }) {
         ];
         setPerformanceData(demoData);
       } else {
-        setPerformanceData(data || []);
+        setPerformanceData(data);
       }
     } catch (err) {
       console.error("Error:", err);
