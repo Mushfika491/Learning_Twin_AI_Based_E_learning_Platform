@@ -383,6 +383,39 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_reports: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          generated_at: string
+          performance_report_id: string
+          recommendations: string
+          strengths: string
+          student_id: string
+          weakness: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          generated_at?: string
+          performance_report_id: string
+          recommendations: string
+          strengths: string
+          student_id: string
+          weakness: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          generated_at?: string
+          performance_report_id?: string
+          recommendations?: string
+          strengths?: string
+          student_id?: string
+          weakness?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           achievements: string | null
