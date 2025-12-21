@@ -31,16 +31,19 @@ export function InstructorDashboardHome() {
 
     const courseIds = courses?.map(c => c.id) || [];
 
-    // Get enrollment count
+    // Get enrollment count and unique students
     let totalStudents = 0;
     let avgProgress = 0;
     if (courseIds.length > 0) {
       const { data: enrollments } = await supabase
         .from("enrollments")
-        .select("id, progress")
+        .select("id, progress, user_id")
         .in("course_id", courseIds);
 
-      totalStudents = enrollments?.length || 0;
+      // Count unique students
+      const uniqueStudents = new Set(enrollments?.map(e => e.user_id) || []);
+      totalStudents = uniqueStudents.size;
+      
       if (enrollments && enrollments.length > 0) {
         avgProgress = Math.round(
           enrollments.reduce((acc, e) => acc + (e.progress || 0), 0) / enrollments.length
@@ -70,29 +73,99 @@ export function InstructorDashboardHome() {
       avgRating,
     });
 
-    // Engagement data with 5 data points
-    setEngagementData([
-      { name: "Week 1", students: 32 },
-      { name: "Week 2", students: 48 },
-      { name: "Week 3", students: 65 },
-      { name: "Week 4", students: 58 },
-      { name: "Week 5", students: 72 },
-    ]);
+    // Fetch real engagement data from activity_logs (last 5 weeks)
+    if (courseIds.length > 0) {
+      const fiveWeeksAgo = new Date();
+      fiveWeeksAgo.setDate(fiveWeeksAgo.getDate() - 35);
+      
+      const { data: activityLogs } = await supabase
+        .from("activity_logs")
+        .select("activity_time, user_id")
+        .in("course_id", courseIds)
+        .gte("activity_time", fiveWeeksAgo.toISOString());
 
-    // Performance data for 5 courses
-    const perfData = courses && courses.length > 0 
-      ? courses.slice(0, 5).map(course => ({
-          course: course.title.substring(0, 15),
-          avg: Math.floor(Math.random() * 30) + 70,
-        }))
-      : [
-          { course: "Python Intro", avg: 85 },
-          { course: "Adv JavaScript", avg: 78 },
-          { course: "Data Science", avg: 92 },
-          { course: "React Dev", avg: 81 },
-          { course: "ML Basics", avg: 76 },
-        ];
-    setPerformanceData(perfData);
+      // Group by week
+      const weeklyData: { [key: string]: Set<string> } = {};
+      const now = new Date();
+      
+      for (let i = 4; i >= 0; i--) {
+        const weekStart = new Date(now);
+        weekStart.setDate(weekStart.getDate() - (i + 1) * 7);
+        const weekEnd = new Date(now);
+        weekEnd.setDate(weekEnd.getDate() - i * 7);
+        const weekLabel = `Week ${5 - i}`;
+        weeklyData[weekLabel] = new Set();
+        
+        activityLogs?.forEach(log => {
+          const logDate = new Date(log.activity_time || '');
+          if (logDate >= weekStart && logDate < weekEnd) {
+            weeklyData[weekLabel].add(log.user_id);
+          }
+        });
+      }
+
+      const engagementChartData = Object.entries(weeklyData).map(([name, students]) => ({
+        name,
+        students: students.size,
+      }));
+      
+      setEngagementData(engagementChartData.length > 0 ? engagementChartData : [
+        { name: "Week 1", students: 0 },
+        { name: "Week 2", students: 0 },
+        { name: "Week 3", students: 0 },
+        { name: "Week 4", students: 0 },
+        { name: "Week 5", students: 0 },
+      ]);
+    } else {
+      setEngagementData([
+        { name: "Week 1", students: 0 },
+        { name: "Week 2", students: 0 },
+        { name: "Week 3", students: 0 },
+        { name: "Week 4", students: 0 },
+        { name: "Week 5", students: 0 },
+      ]);
+    }
+
+    // Fetch real performance data from scores/assessments
+    if (courses && courses.length > 0) {
+      const courseIdStrings = courses.map(c => c.id);
+      
+      // Fetch assessments for these courses
+      const { data: assessments } = await supabase
+        .from("student_assessments")
+        .select("course_id, obtained_mark, total_marks")
+        .in("course_id", courseIdStrings)
+        .not("obtained_mark", "is", null);
+
+      // Calculate average score per course
+      const courseScores: { [courseId: string]: { total: number; count: number } } = {};
+      
+      assessments?.forEach(assessment => {
+        if (assessment.course_id && assessment.obtained_mark !== null) {
+          if (!courseScores[assessment.course_id]) {
+            courseScores[assessment.course_id] = { total: 0, count: 0 };
+          }
+          const percentage = (assessment.obtained_mark / assessment.total_marks) * 100;
+          courseScores[assessment.course_id].total += percentage;
+          courseScores[assessment.course_id].count += 1;
+        }
+      });
+
+      const perfData = courses.slice(0, 5).map(course => {
+        const scores = courseScores[course.id];
+        const avgScore = scores && scores.count > 0 
+          ? Math.round(scores.total / scores.count) 
+          : 0;
+        return {
+          course: course.title.length > 15 ? course.title.substring(0, 12) + "..." : course.title,
+          avg: avgScore,
+        };
+      });
+      
+      setPerformanceData(perfData);
+    } else {
+      setPerformanceData([]);
+    }
   };
 
   const statCards = [
