@@ -237,9 +237,14 @@ export function InstructorStudentPerformance() {
     return matchesSearch && matchesCourse;
   });
 
-  // Filter performance reports by Student ID
+  // Filter performance reports by Student ID or Student Name
   const filteredReports = performanceReports.filter(r => {
-    return r.student_id.toLowerCase().includes(reportSearchTerm.toLowerCase());
+    const studentName = getStudentName(r.student_id).toLowerCase();
+    const formattedId = formatStudentId(r.student_id, performanceReports.indexOf(r)).toLowerCase();
+    const searchLower = reportSearchTerm.toLowerCase();
+    return studentName.includes(searchLower) || 
+           formattedId.includes(searchLower) || 
+           r.student_id.toLowerCase().includes(searchLower);
   });
 
   // Generate performance report
