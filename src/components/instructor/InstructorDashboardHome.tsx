@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { supabase } from "@/integrations/supabase/client";
 import { BookOpen, Users, TrendingUp, Star } from "lucide-react";
 import { motion } from "framer-motion";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export function InstructorDashboardHome() {
   const [stats, setStats] = useState({
@@ -215,13 +215,33 @@ export function InstructorDashboardHome() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={engagementData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="students" stroke="hsl(var(--primary))" strokeWidth={2} />
-              </LineChart>
+              <AreaChart data={engagementData}>
+                <defs>
+                  <linearGradient id="studentGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="name" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: "hsl(var(--card))", 
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px"
+                  }} 
+                />
+                <Area 
+                  type="monotoneX" 
+                  dataKey="students" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={3}
+                  fill="url(#studentGradient)"
+                  dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: "hsl(var(--primary))" }}
+                />
+              </AreaChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -233,13 +253,33 @@ export function InstructorDashboardHome() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={performanceData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="course" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="avg" fill="hsl(var(--primary))" />
-              </BarChart>
+              <AreaChart data={performanceData}>
+                <defs>
+                  <linearGradient id="performanceGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="course" className="text-xs" />
+                <YAxis className="text-xs" domain={[0, 100]} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: "hsl(var(--card))", 
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px"
+                  }} 
+                />
+                <Area 
+                  type="monotoneX" 
+                  dataKey="avg" 
+                  stroke="hsl(var(--chart-2))" 
+                  strokeWidth={3}
+                  fill="url(#performanceGradient)"
+                  dot={{ fill: "hsl(var(--chart-2))", strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: "hsl(var(--chart-2))" }}
+                />
+              </AreaChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
