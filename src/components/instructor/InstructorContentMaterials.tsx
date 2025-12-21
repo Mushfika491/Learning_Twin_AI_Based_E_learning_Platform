@@ -114,6 +114,19 @@ export function InstructorContentMaterials() {
   
   const { toast } = useToast();
 
+  // Helper to generate next ID in format PREFIX-XXX
+  const generateNextId = (prefix: string, existingItems: { assessment_id?: string; id?: string }[], idField: 'assessment_id' | 'id' = 'assessment_id') => {
+    const existingIds = existingItems
+      .map(item => item[idField] || '')
+      .filter(id => id.startsWith(prefix))
+      .map(id => {
+        const num = parseInt(id.replace(`${prefix}-`, ''));
+        return isNaN(num) ? 0 : num;
+      });
+    const maxId = existingIds.length > 0 ? Math.max(...existingIds) : 0;
+    return `${prefix}-${String(maxId + 1).padStart(3, '0')}`;
+  };
+
   const [contentForm, setContentForm] = useState({
     course_id: "",
     type: "document",
@@ -427,25 +440,54 @@ export function InstructorContentMaterials() {
 
   // Reset forms
   const resetContentForm = () => {
-    setContentForm({ course_id: "", type: "document", title: "", link: "", order_index: 0 });
+    setContentForm({ 
+      course_id: courses.length > 0 ? courses[0].id : "", 
+      type: "document", 
+      title: "", 
+      link: "", 
+      order_index: 30 
+    });
     setEditingContent(null);
     setIsContentDialogOpen(false);
   };
 
   const resetQuizForm = () => {
-    setQuizForm({ course_id: "", title: "", total_marks: 100, difficulty_level: "Intermediate" });
+    setQuizForm({ 
+      course_id: courses.length > 0 ? courses[0].id : "", 
+      title: "", 
+      total_marks: 100, 
+      difficulty_level: "Intermediate" 
+    });
     setEditingQuiz(null);
     setIsQuizDialogOpen(false);
   };
 
   const resetQuestionForm = () => {
-    setQuestionForm({ assessment_id: "", question_number: 1, question_type: "MCQ", category: "", question_text: "", correct_answer: "", course_id: "" });
+    const nextAssessmentId = generateNextId('ASM', questions);
+    setQuestionForm({ 
+      assessment_id: nextAssessmentId, 
+      question_number: 1, 
+      question_type: "MCQ", 
+      category: "", 
+      question_text: "", 
+      correct_answer: "", 
+      course_id: "" 
+    });
     setEditingQuestion(null);
     setIsQuestionDialogOpen(false);
   };
 
   const resetAssignmentForm = () => {
-    setAssignmentForm({ assessment_id: "", assessment_title: "", assessment_type: "Assignment", course_id: "", total_marks: 100, due_date_time: "", student_id: "00000000-0000-0000-0000-000000000000" });
+    const nextAssessmentId = generateNextId('ASM', assignments);
+    setAssignmentForm({ 
+      assessment_id: nextAssessmentId, 
+      assessment_title: "", 
+      assessment_type: "Assignment", 
+      course_id: "", 
+      total_marks: 100, 
+      due_date_time: "", 
+      student_id: "00000000-0000-0000-0000-000000000000" 
+    });
     setEditingAssignment(null);
     setIsAssignmentDialogOpen(false);
   };
