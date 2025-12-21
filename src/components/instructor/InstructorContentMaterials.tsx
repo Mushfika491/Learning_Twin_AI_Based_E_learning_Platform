@@ -129,7 +129,7 @@ export function InstructorContentMaterials() {
 
   const [contentForm, setContentForm] = useState({
     course_id: "",
-    type: "document",
+    type: "video",
     title: "",
     link: "",
     order_index: 0,
@@ -442,7 +442,7 @@ export function InstructorContentMaterials() {
   const resetContentForm = () => {
     setContentForm({ 
       course_id: courses.length > 0 ? courses[0].id : "", 
-      type: "document", 
+      type: "video", 
       title: "", 
       link: "", 
       order_index: 30 
@@ -1044,9 +1044,14 @@ export function InstructorContentMaterials() {
               <Select value={contentForm.type} onValueChange={(v) => setContentForm({ ...contentForm, type: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="document">Document</SelectItem>
                   <SelectItem value="video">Video</SelectItem>
+                  <SelectItem value="article">Article</SelectItem>
+                  <SelectItem value="document">Document</SelectItem>
+                  <SelectItem value="quiz">Quiz</SelectItem>
+                  <SelectItem value="assignment">Assignment</SelectItem>
                   <SelectItem value="link">Link</SelectItem>
+                  <SelectItem value="pdf">PDF</SelectItem>
+                  <SelectItem value="presentation">Presentation</SelectItem>
                 </SelectContent>
               </Select>
             </div>
