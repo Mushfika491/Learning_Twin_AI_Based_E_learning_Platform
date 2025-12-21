@@ -225,9 +225,14 @@ export function InstructorStudentPerformance() {
     return studentId.toLowerCase().includes(studentSearchTerm.toLowerCase());
   });
 
-  // Filter enrollments by Student ID
+  // Filter enrollments by Student ID or Student Name
   const filteredEnrollments = enrollments.filter(e => {
-    const matchesSearch = e.user_id.toLowerCase().includes(enrollmentSearchTerm.toLowerCase());
+    const studentName = getStudentName(e.user_id).toLowerCase();
+    const formattedId = formatStudentId(e.user_id, enrollments.indexOf(e)).toLowerCase();
+    const searchLower = enrollmentSearchTerm.toLowerCase();
+    const matchesSearch = studentName.includes(searchLower) || 
+                          formattedId.includes(searchLower) || 
+                          e.user_id.toLowerCase().includes(searchLower);
     const matchesCourse = selectedCourse === "all" || e.course_id === selectedCourse;
     return matchesSearch && matchesCourse;
   });
