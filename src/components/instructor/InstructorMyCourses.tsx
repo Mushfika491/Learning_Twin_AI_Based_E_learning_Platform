@@ -507,15 +507,9 @@ export function InstructorMyCourses() {
         <TabsContent value="prerequisites">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Course Prerequisites</CardTitle>
-                  <CardDescription>Manage prerequisites for your courses</CardDescription>
-                </div>
-                <Button onClick={() => { resetPrereqForm(); setIsPrereqDialogOpen(true); }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Prerequisite
-                </Button>
+              <div>
+                <CardTitle>Course Prerequisites</CardTitle>
+                <CardDescription>Manage prerequisites for your courses</CardDescription>
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <Search className="h-4 w-4 text-muted-foreground" />
@@ -572,15 +566,9 @@ export function InstructorMyCourses() {
         <TabsContent value="ratings">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Ratings & Reviews</CardTitle>
-                  <CardDescription>Student feedback on your courses</CardDescription>
-                </div>
-                <Button onClick={() => { resetRatingForm(); setIsRatingDialogOpen(true); }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Rating
-                </Button>
+              <div>
+                <CardTitle>Ratings & Reviews</CardTitle>
+                <CardDescription>Student feedback on your courses</CardDescription>
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <Search className="h-4 w-4 text-muted-foreground" />
